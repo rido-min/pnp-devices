@@ -1,6 +1,6 @@
-﻿using System;
+﻿using Rido.IoTHubClient;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -9,26 +9,28 @@ namespace thermostat_port
 {
     internal class Program
     {
-        private readonly Random _random = new Random();
+        private readonly Random _random = new();
 
         private double _temperature = 0d;
         private double _maxTemp = 0d;
 
-        private readonly Dictionary<DateTimeOffset, double> _temperatureReadingsDateTimeOffset = new Dictionary<DateTimeOffset, double>();
+        private readonly Dictionary<DateTimeOffset, double> _temperatureReadingsDateTimeOffset = new ();
 
         static async Task Main(string[] args) => await new Program().RunAsync(Environment.GetEnvironmentVariable("cs"));
 
         async Task RunAsync(string connectionString)
         {
-            Console.WriteLine(new Rido.IoTHubClient.DeviceConnectionString(connectionString).ToString());
-            var client = await Rido.IoTHubClient.HubMqttClient.CreateFromConnectionStringAsync(connectionString);
+            connectionString += ";ModelId=dtmi:com:example:Thermostat;1";
+
+            IHubMqttClient client = await HubMqttClient.CreateFromConnectionStringAsync(connectionString);
+            Console.WriteLine(client.DeviceConnectionString);
 
             client.OnCommandReceived += async (o, c) =>
             {
                 Console.WriteLine(c.CommandName);
                 if (c.CommandName == "getMaxMinReport")
                 {
-                    Console.WriteLine("<- c:getMaxMinReport");
+                    Console.WriteLine("<- c: getMaxMinReport");
 
                     DateTime since = JsonSerializer.Deserialize<DateTime>(c.CommandRequestMessageJson);
 
@@ -47,17 +49,6 @@ namespace thermostat_port
                             endTime = filteredReadings.Keys.Max(),
                         };
                         await client.CommandResponseAsync(c.Rid, c.CommandRequestMessageJson, "200", report);
-                    }
-                    else
-                    {
-                        await client.CommandResponseAsync(c.Rid, c.CommandRequestMessageJson, "200", new
-                        {
-                            maxTemp = 0,
-                            minTemp = 0,
-                            avgTemp = 0,
-                            startTime = 0,
-                            endTime = 0
-                        });
                     }
                 }
             };

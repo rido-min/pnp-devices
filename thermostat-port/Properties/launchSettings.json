@@ -3,7 +3,7 @@
     "thermostat-port": {
       "commandName": "Project",
       "environmentVariables": {
-        "cs": "HostName=tests.azure-devices.net;DeviceId=thermostat-port;SharedAccessKey=MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=;ModelId=dtmi:com:example:Thermostat;1"
+        "cs": "HostName=tests.azure-devices.net;DeviceId=thermostat-port;SharedAccessKey=MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
       }
     }
   }
