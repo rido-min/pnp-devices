@@ -3,7 +3,8 @@
     "thermostat-port": {
       "commandName": "Project",
       "environmentVariables": {
-        "cs": "HostName=tests.azure-devices.net;DeviceId=thermostat-port;SharedAccessKey=MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA="
+        "cs": "HostName=tests.azure-devices.net;DeviceId=thermostat-port;SharedAccessKey=MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=",
+        "dps": "IdScope=0ne00385995;DeviceId=thermostat-port;SharedAccessKey=2LfSC+WVObNbYE90dOioZ+rAVoWLoAjOW5IjxAZa9LQ="
       }
     }
   }

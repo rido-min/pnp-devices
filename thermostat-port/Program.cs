@@ -16,11 +16,19 @@ namespace thermostat_port
 
         private readonly Dictionary<DateTimeOffset, double> _temperatureReadingsDateTimeOffset = new ();
 
-        static async Task Main(string[] args) => await new Program().RunAsync(Environment.GetEnvironmentVariable("cs"));
+        static async Task Main(string[] args) => await new Program().RunAsync();
 
-        async Task RunAsync(string connectionString)
+        async Task RunAsync()
         {
-            connectionString += ";ModelId=dtmi:com:example:Thermostat;1";
+            string idScope = "0ne00385995";
+            string deviceId = "thermostat-port";
+            string key = "2LfSC+WVObNbYE90dOioZ+rAVoWLoAjOW5IjxAZa9LQ=";
+
+            //connectionString += ";ModelId=dtmi:com:example:Thermostat;1";
+
+
+            var dpsRes = await DpsClient.ProvisionWithSasAsync(idScope, deviceId, key);
+            var connectionString = $"HostName={dpsRes.registrationState.assignedHub};DeviceId={deviceId};SharedAccessKey={key};ModelId=dtmi:com:example:Thermostat;1";
 
             IHubMqttClient client = await HubMqttClient.CreateFromConnectionStringAsync(connectionString);
             Console.WriteLine(client.DeviceConnectionString);
