@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "telemetry-samples": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "cs": "HostName=tests.azure-devices.net;DeviceId=thermostat-port;SharedAccessKey=MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDA=",
+        "dps": "IdScope=0ne00263D29;DeviceId=telemetry-sample;SharedAccessKey=BDOPPNAdCg3CzbZxM0kEImDzX2Qbrr0aEN/bdXx4cfs=;ModelId=dtmi:ridoapp:TelemetrySamples;3"
+      }
+    }
+  }
+}

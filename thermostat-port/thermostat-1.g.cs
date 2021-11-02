@@ -48,7 +48,7 @@ public class Thermostat
     IMqttClient? client = null;
     ConnectionSettings? dcs = null;
 
-    public Action<TargetTemperature>? OntargetTemperatureUpdated = null;
+    public Func<TargetTemperature, PropertyAck>? OntargetTemperatureUpdated = null;
     
     public Func<Command_getMaxMinReport_Request, Command_getMaxMinReport_Response>? Command_getMaxMinReport = null;
     
@@ -101,7 +101,8 @@ public class Thermostat
             {
                 msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
                 JsonElement targetTemperature = JsonDocument.Parse(msg).RootElement.GetProperty("targetTemperature");
-                OntargetTemperatureUpdated?.Invoke(new TargetTemperature { targetTemperature = targetTemperature.GetDouble(), version = twinVersion });
+                var ack = OntargetTemperatureUpdated?.Invoke(new TargetTemperature { targetTemperature = targetTemperature.GetDouble(), version = twinVersion });
+                if (ack != null) await this.Report_targetTemperatureACK(ack);
             }
 
             if (m.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/204"))
@@ -119,6 +120,8 @@ public class Thermostat
             }
         });
     }
+
+   
 
     Action<int>? Callback_maxTempSinceLastReboot = null;
     public async Task<int> Report_maxTempSinceLastReboot(double temperature)
@@ -144,12 +147,12 @@ public class Thermostat
             $"devices/{dcs?.DeviceId}/messages/events/",
             JsonSerializer.Serialize(new { temperature }));
     }
-
-    internal async Task Ack_TargetTemperature(double temperature, int status, int version)
+    
+    
+    public async Task Report_targetTemperatureACK(PropertyAck ack)
     {
         var puback = await client.PublishAsync(
-           $"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}",
-           JsonSerializer.Serialize(new { targetTemperature = new { ac = status, av = version, value = temperature } }));
+           $"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.BuildAck());
     }
 }
 
