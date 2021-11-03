@@ -56,19 +56,7 @@ public class Thermostat
 
     public Thermostat(string cs)
     {
-        var logger = new MqttNetEventLogger();
-        logger.LogMessagePublished += (s, e) =>
-        {
-            var trace = $">> [{e.LogMessage.Timestamp:O}] [{e.LogMessage.ThreadId}]: {e.LogMessage.Message}";
-            if (e.LogMessage.Exception != null)
-            {
-                trace += Environment.NewLine + e.LogMessage.Exception.ToString();
-            }
-
-            Trace.TraceInformation(trace);
-        };
-
-        client = new MqttFactory(logger).CreateMqttClient();
+        client = new MqttFactory().CreateMqttClient();
         dcs = ConnectionSettings.FromConnectionString(cs);
         var connack = client.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, "dtmi:com:example:Thermostat;1", 5).Result;
         Console.WriteLine(connack.ResultCode);
