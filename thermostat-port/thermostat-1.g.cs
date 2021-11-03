@@ -5,6 +5,7 @@ using MQTTnet;
 using MQTTnet.Client;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
+using MQTTnet.Diagnostics.Logger;
 using MQTTnet.Protocol;
 using Rido.IoTHubClient;
 using System.Diagnostics;
@@ -55,7 +56,19 @@ public class Thermostat
 
     public Thermostat(string cs)
     {
-        client = new MqttFactory().CreateMqttClient();
+        var logger = new MqttNetEventLogger();
+        logger.LogMessagePublished += (s, e) =>
+        {
+            var trace = $">> [{e.LogMessage.Timestamp:O}] [{e.LogMessage.ThreadId}]: {e.LogMessage.Message}";
+            if (e.LogMessage.Exception != null)
+            {
+                trace += Environment.NewLine + e.LogMessage.Exception.ToString();
+            }
+
+            Trace.TraceInformation(trace);
+        };
+
+        client = new MqttFactory(logger).CreateMqttClient();
         dcs = ConnectionSettings.FromConnectionString(cs);
         var connack = client.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, "dtmi:com:example:Thermostat;1", 5).Result;
         Console.WriteLine(connack.ResultCode);
@@ -96,13 +109,17 @@ public class Thermostat
                 twinVersion = Convert.ToInt32(qs["$version"]);
             }
 
-            string msg = string.Empty;
+            string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
             if (m.ApplicationMessage.Topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
             {
-                msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
                 JsonElement targetTemperature = JsonDocument.Parse(msg).RootElement.GetProperty("targetTemperature");
                 var ack = OntargetTemperatureUpdated?.Invoke(new TargetTemperature { targetTemperature = targetTemperature.GetDouble(), version = twinVersion });
                 if (ack != null) await this.Report_targetTemperatureACK(ack);
+            }
+
+            if (m.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/200"))
+            {
+                getTwin_cb(msg);
             }
 
             if (m.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/204"))
@@ -154,5 +171,57 @@ public class Thermostat
         var puback = await client.PublishAsync(
            $"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.BuildAck());
     }
+
+    Action<string>? getTwin_cb;
+    public async Task<string> GetTwin()
+    {
+        var tcs = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var puback = await client.PublishAsync($"$iothub/twin/GET/?$rid={lastRid++}", string.Empty);
+        if (puback?.ReasonCode == MqttClientPublishReasonCode.Success)
+        {
+            getTwin_cb = s => tcs.TrySetResult(s);
+        }
+        else
+        {
+            getTwin_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback?.ReasonCode}' publishing twin GET: {s}"));
+        }
+        return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(5));
+    }
+
+    public async Task<TargetTemperature> GetTargetTemperature()
+    {
+        TargetTemperature result = new TargetTemperature();
+        var twinJson = await GetTwin();
+        var twin = JsonDocument.Parse(twinJson).RootElement;
+        var desired = twin.GetProperty("desired");
+        if (desired.TryGetProperty("targetTemperature", out JsonElement targetTempNode))
+        {
+            if (targetTempNode.TryGetDouble(out double targetTempValue))
+            {
+                result.targetTemperature = targetTempValue;
+            }
+            if (desired.TryGetProperty("$version", out JsonElement versionEl))
+            {
+                result.version = versionEl.GetInt32();
+            }
+        } 
+        else
+        {
+            var reported = twin.GetProperty("reported");
+            if (reported.TryGetProperty("targetTemperature", out JsonElement targetTempAck))
+            {
+                if (targetTempAck.TryGetProperty("value", out JsonElement targetTempAckValue))
+                {
+                    result.targetTemperature = targetTempAckValue.GetDouble();
+                }
+                if (targetTempAck.TryGetProperty("av", out JsonElement targetTempAckVersion))
+                {
+                    result.version = targetTempAckVersion.GetInt32();
+                }
+            }
+        }
+        return result;
+    }
 }
+
 

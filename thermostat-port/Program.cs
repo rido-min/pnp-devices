@@ -7,11 +7,14 @@ double maxTemp = 0d;
 Dictionary<DateTimeOffset, double> readings = new() { { DateTimeOffset.Now, maxTemp} };
 
 string connectionString = Environment.GetEnvironmentVariable("cs") ?? throw new ArgumentException("Env Var 'cs' not found.");
-Console.WriteLine(connectionString);
+
 Thermostat thermostat = new(connectionString);
 
-await thermostat.Report_maxTempSinceLastReboot(maxTemp);
-Console.WriteLine("-> r: maxTempSinceLastReboot " + maxTemp);
+var targetTemperature = await thermostat.GetTargetTemperature();
+if (targetTemperature?.targetTemperature != null)
+{
+    AdjustTempInSteps(targetTemperature.targetTemperature);
+}
 
 thermostat.Command_getMaxMinReport = req =>
 {
@@ -41,17 +44,10 @@ thermostat.OntargetTemperatureUpdated = m =>
         Version = m.version,
         Value = JsonSerializer.Serialize(new { temperature })
     }));
-
-    double step = (m.targetTemperature - temperature) / 10d;
-    for (int i = 1; i <= 10; i++)
-    {
-        temperature = Math.Round(temperature + step, 1);
-        readings.Add(DateTimeOffset.Now, temperature);
-       
-
-        Task.Delay(1000).Wait();
-    }
-    return new PropertyAck
+    
+    AdjustTempInSteps(m.targetTemperature);
+    
+    return new PropertyAck()
     {
         Description = "updated",
         Status = 200,
@@ -73,5 +69,20 @@ while (true)
     await Task.Delay(2000); 
 }
 
+void AdjustTempInSteps(double target)
+{
+    Console.WriteLine("adjusting temp to: " + target);
+    Task.Run( async () =>
+    {
+        double step = (target - temperature) / 10d;
+        for (int i = 1; i <= 10; i++)
+        {
+            temperature = Math.Round(temperature + step, 1);
+            readings.Add(DateTimeOffset.Now, temperature);
 
+
+            await Task.Delay(1000);
+        }
+    });
+}
 
