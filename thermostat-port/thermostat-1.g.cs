@@ -107,7 +107,7 @@ public class Thermostat
 
             if (m.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/200"))
             {
-                getTwin_cb(msg);
+                getTwin_cb?.Invoke(msg);
             }
 
             if (m.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/204"))
