@@ -46,7 +46,7 @@ public class Command_getMaxMinReport_Response : CommandResponse
 public class Thermostat
 {
     int lastRid = 0;
-    IMqttClient? client = null;
+    HubMqttConnection? client = null;
     ConnectionSettings? dcs = null;
 
     public Func<TargetTemperature, PropertyAck>? OntargetTemperatureUpdated = null;
@@ -56,17 +56,9 @@ public class Thermostat
 
     public Thermostat(string cs)
     {
-        client = new MqttFactory().CreateMqttClient();
+        
         dcs = ConnectionSettings.FromConnectionString(cs);
-        var connack = client.ConnectWithSasAsync(dcs.HostName, dcs.DeviceId, dcs.SharedAccessKey, "dtmi:com:example:Thermostat;1", 5).Result;
-        Console.WriteLine(connack.ResultCode);
-        Configure().Wait();
-    }
-
-    public Thermostat(IMqttClient c, ConnectionSettings cs)
-    {
-        client = c;
-        dcs = cs ?? throw new ArgumentNullException(nameof(cs));
+        client = HubMqttConnection.CreateAsync(dcs).Result;
         Configure().Wait();
     }
 
@@ -83,7 +75,7 @@ public class Thermostat
         {
             throw new ApplicationException("Error subscribing to system topics");
         }
-
+        
         client.UseApplicationMessageReceivedHandler(async m =>
         {
             var segments = m.ApplicationMessage.Topic.Split('/');

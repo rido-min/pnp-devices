@@ -6,7 +6,7 @@ namespace telemetry_samples
 {
     class Program
     {
-        static async Task Main(string[] args)
+        static async Task Main()
         {
             var client = await HubMqttClient.CreateFromConnectionStringAsync(Environment.GetEnvironmentVariable("dps"));
             
