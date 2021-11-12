@@ -10,11 +10,16 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Rido.IoTHubClient" Version="0.0.5" />
+	  <PackageReference Include="Rido.IoTHubClient" Version="0.0.8" />
 	</ItemGroup>
 	<ItemGroup>
 		<Compile Update="thermostat-1.g.cs">
 			<DependentUpon>thermostat-1.json</DependentUpon>
 		</Compile>
+	</ItemGroup>
+	<ItemGroup>
+		<Using Include="Rido.IoTHubClient" />
+		<Using Include="System.Text.Json" />
+		<Using Include="System" />
 	</ItemGroup>
 </Project>
