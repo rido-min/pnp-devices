@@ -1,0 +1,13 @@
+﻿{
+  "@context": "dtmi:dtdl:context;2",
+  "@type": "Interface",
+  "@id": "dtmi:rido:onewprop;1",
+  "contents": [
+    {
+      "@type": "Property",
+      "name": "enabled",
+      "schema": "boolean",
+      "writable": true
+    }
+  ]
+}
