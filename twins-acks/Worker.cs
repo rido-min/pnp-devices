@@ -15,6 +15,7 @@ namespace twins_acks
             _configuration = config;
         }
 
+        const bool DEFAULT_ENABLED_VALUE = true;
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var cs = _configuration.GetConnectionString("dps");
@@ -26,11 +27,11 @@ namespace twins_acks
 
             //reset
             //await client.UpdateTwinAsync("{ \"enabled\" : null }");
+                    
+
 
             var twin = await client.GetTwinAsync();
             _logger.LogInformation(twin);
-
-            const bool DEFAULT_ENABLED_VALUE = true;
 
             var tp = new TwinProperties(twin);
             (bool? effectiveValue, bool needsAck) = tp.GetEffectiveProperty("enabled");
