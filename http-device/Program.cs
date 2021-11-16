@@ -1,20 +1,23 @@
-﻿using Rido.IoTHubClient;
+﻿string js(object o) => System.Text.Json.JsonSerializer.Serialize(o);
 
-string js(object o) => System.Text.Json.JsonSerializer.Serialize(o);
-
-ConnectionSettings cs = new ConnectionSettings(Environment.GetEnvironmentVariable("cs"));
-(string u, string p) = SasAuth.GenerateHubSasCredentials(cs.HostName, cs.DeviceId, cs.SharedAccessKey, string.Empty, 60);
-
-
+var cs = Rido.IoTHubClient.ConnectionSettings.FromConnectionString(Environment.GetEnvironmentVariable("cs"));
+string urlTelemetry = $"https://{cs.HostName}/devices/{cs.DeviceId}/messages/events?api-version=2020-03-13";
 
 while (true)
 {
-    HttpClient http = new HttpClient();
-    string urlTelemetry = $"https://{cs.HostName}/devices/{cs.DeviceId}/messages/events?api-version=2020-03-13";
-    var reqTelemetry = new HttpRequestMessage(HttpMethod.Post, urlTelemetry)};
-    reqTelemetry.Headers.Add("authorization", p);
-    reqTelemetry.Content = new StringContent(js(new { Environment.WorkingSet }), System.Text.Encoding.UTF8, "application/json");
-    var resp = await http.SendAsync(reqTelemetry);
+    (_, string token) = Rido.IoTHubClient.SasAuth.GenerateHubSasCredentials(cs.HostName, cs.DeviceId, cs.SharedAccessKey, "");
+    var resp = await new HttpClient()
+                        .SendAsync(
+                            new HttpRequestMessage(
+                                HttpMethod.Post, 
+                                urlTelemetry)
+                                {
+                                    Headers = { { "authorization", token } },
+                                    Content = new StringContent(
+                                        js(new { Environment.WorkingSet }), 
+                                        System.Text.Encoding.UTF8, 
+                                        "application/json")
+                                });
     Console.WriteLine(resp.IsSuccessStatusCode);
     await Task.Delay(1000);
 }
