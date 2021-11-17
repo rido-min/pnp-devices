@@ -100,6 +100,9 @@ public class DeviceRunner : BackgroundService
         {
             result.Add("this app:", Assembly.GetExecutingAssembly()?.FullName ?? "");
             result.Add("os version", Environment.OSVersion.ToString());
+            result.Add($"twin counter: ",  twinCounter.ToString());
+            result.Add("telemetry counter: ", telemetryCounter.ToString());
+            result.Add("command counter: ", commandCounter.ToString());
         }
 
         return await Task.FromResult(result);

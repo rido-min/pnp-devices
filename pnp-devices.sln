@@ -14,8 +14,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "telemetry-samples", "teleme
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "http-device", "http-device\http-device.csproj", "{9F37EDF2-22B5-49E6-A148-A70CAB18AB64}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "wprops-demo", "wprops-demo\wprops-demo.csproj", "{35B3A7AA-FCBB-48C3-B325-3EF10EB16868}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "pnp-basic", "pnp-basic\pnp-basic.csproj", "{D349B6BF-13B4-4E67-A28F-ED363548B03B}"
 EndProject
 Global
@@ -36,10 +34,6 @@ Global
 		{9F37EDF2-22B5-49E6-A148-A70CAB18AB64}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F37EDF2-22B5-49E6-A148-A70CAB18AB64}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F37EDF2-22B5-49E6-A148-A70CAB18AB64}.Release|Any CPU.Build.0 = Release|Any CPU
-		{35B3A7AA-FCBB-48C3-B325-3EF10EB16868}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{35B3A7AA-FCBB-48C3-B325-3EF10EB16868}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{35B3A7AA-FCBB-48C3-B325-3EF10EB16868}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{35B3A7AA-FCBB-48C3-B325-3EF10EB16868}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D349B6BF-13B4-4E67-A28F-ED363548B03B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D349B6BF-13B4-4E67-A28F-ED363548B03B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D349B6BF-13B4-4E67-A28F-ED363548B03B}.Release|Any CPU.ActiveCfg = Release|Any CPU

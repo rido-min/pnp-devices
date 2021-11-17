@@ -98,7 +98,7 @@ namespace dtmi_rido
                     Property_interval = await OnProperty_interval_Updated.Invoke(
                          new WritableProperty<int>("interval")
                          {
-                             Description = "updated on init",
+                             Description = "pending update applied",
                              Status = 201,
                              Version = desiredVersion,
                              Value = Convert.ToInt32(desired_interval)
