@@ -19,12 +19,12 @@ namespace rido.wprops_demo
 
         int lastRid;
 
-        public Func<WritableProperty<bool>, Task<PropertyAck>>? OnProperty_enabled_Updated = null;
-        public Func<WritableProperty<int>, Task<PropertyAck>>? OnProperty_interval_Updated = null;
+        public Func<WritableProperty<bool>, Task<WritableProperty<bool>>>? OnProperty_enabled_Updated = null;
+        public Func<WritableProperty<int>, Task<WritableProperty<int>>>? OnProperty_interval_Updated = null;
         public Func<Cmd_getRuntimeStats_Request, Task<Cmd_getRuntimeStats_Response>>? OnCommand_getRuntimeStats_Invoked = null;
 
-        public WritableProperty<bool> Property_enabled;
-        public WritableProperty<int> Property_interval;
+        public WritableProperty<bool>? Property_enabled;
+        public WritableProperty<int>? Property_interval;
 
         public DeviceClient(IHubMqttConnection c)
         {
@@ -37,15 +37,53 @@ namespace rido.wprops_demo
             var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId });
             await SubscribeToSysTopicsAsync(connection);
             var client = new DeviceClient(connection);
-            await client.InitTwinAsync();
             return client;
         }
 
-        private async Task InitTwinAsync()
+        public async Task InitTwinAsync()
         {
             var twin = await GetTwinAsync();
+            var root = JsonNode.Parse(twin);
+            var desired = root?["desired"];
+            var reported = root?["reported"];
+            var desiredVersion = desired?["$version"]?.GetValue<int>();
+            var reported_enabled_version = reported?["enabled"]?["av"]?.GetValue<int>();
+            var reported_interval_version = reported?["interval"]?["av"]?.GetValue<int>();
 
+            if (desiredVersion > reported_enabled_version)
+            {
+                if (OnProperty_enabled_Updated != null)
+                {
+                   var desired_enabled = desired?["enabled"]?.GetValue<bool>();
+                   var acceptedValue = await OnProperty_enabled_Updated.Invoke(
+                        new WritableProperty<bool>("enabled")
+                    {
+                            Description = "updated on init",
+                            Status = 201,
+                            Version = desiredVersion,
+                            Value = Convert.ToBoolean(desired_enabled)
+                    });
+                }
+            }
+
+            if (desiredVersion > reported_interval_version)
+            {
+                if (OnProperty_interval_Updated != null)
+                {
+                    var desired_interval = desired?["interval"]?.GetValue<int>();
+                    await OnProperty_interval_Updated.Invoke(
+                         new WritableProperty<int>("interval")
+                         {
+                             Description = "updated on init",
+                             Status = 201,
+                             Version = desiredVersion,
+                             Value = Convert.ToInt32(desired_interval)
+                         });
+                }
+            }
         }
+
+
 
         void ConfigureSysTopicsCallbacks(IHubMqttConnection connection)
         {
@@ -92,9 +130,8 @@ namespace rido.wprops_demo
                 if (topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
                 {
                     JsonNode? root = JsonNode.Parse(msg);
-                    var desired = root?["desired"];
-                    await Invoke_enabled_Callback(desired);
-                    await Invoke_interval_Callback(desired);
+                    await Invoke_enabled_Callback(root);
+                    await Invoke_interval_Callback(root);
                 }
             };
         }
@@ -105,7 +142,7 @@ namespace rido.wprops_demo
             {
                 if (OnProperty_interval_Updated != null)
                 {
-                    var intervalProperty = new WritableProperty<int>()
+                    var intervalProperty = new WritableProperty<int>("interval")
                     {
                         Value = Convert.ToInt32(desired?["interval"]?.GetValue<int>()),
                         Version = desired?["$version"]?.GetValue<int>()
@@ -113,7 +150,7 @@ namespace rido.wprops_demo
                     var ack = await OnProperty_interval_Updated.Invoke(intervalProperty);
                     if (ack != null)
                     {
-                        await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.BuildAck());
+                        await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.ToAck());
                     }
                 }
             }
@@ -125,7 +162,7 @@ namespace rido.wprops_demo
             {
                 if (OnProperty_enabled_Updated != null)
                 {
-                    var enabledProperty = new WritableProperty<bool>()
+                    var enabledProperty = new WritableProperty<bool>("enabled")
                     {
                         Value = Convert.ToBoolean(desired?["enabled"]?.GetValue<bool>()),
                         Version = desired?["$version"]?.GetValue<int>(),
@@ -133,7 +170,7 @@ namespace rido.wprops_demo
                     var ack = await OnProperty_enabled_Updated.Invoke(enabledProperty);
                     if (ack != null)
                     {
-                        await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.BuildAck());
+                        await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", ack.ToAck());
                     }
                 }
             }
@@ -167,7 +204,7 @@ namespace rido.wprops_demo
 
         Action<int>? report_cb;
 
-        public async Task<int> Report_started(DateTime started)
+        public async Task<int> Report_started_Async(DateTime started)
         {
             var tcs = new TaskCompletionSource<int>();
             var puback = await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", new { started });

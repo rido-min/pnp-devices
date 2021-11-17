@@ -15,8 +15,8 @@ namespace wprops_demo
         const bool default_enabled = true;
         const int default_interval = 5;
 
-        bool? enabled;
-        int? interval;
+        bool enabled;
+        int interval;
 
         public DeviceRunner(ILogger<DeviceRunner> logger, IConfiguration configuration)
         {
@@ -27,17 +27,18 @@ namespace wprops_demo
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
 
-            var client = await DeviceClient.CreateDeviceClientAsync(_configuration.GetConnectionString("central-rido"));
+            var client = await DeviceClient.CreateDeviceClientAsync(_configuration.GetConnectionString("hub"));
+            Console.WriteLine(client._connection.ConnectionSettings.ToString());
             client.OnProperty_enabled_Updated = async req =>
             {
                 Console.WriteLine("Received enabled");
                 enabled = req.Value;
-                var ack = new PropertyAck
+                var ack = new WritableProperty<bool>("enabled")
                 {
                     Description = "desired notification accepted",
                     Status = 200,
                     Version = Convert.ToInt32(req?.Version),
-                    Value = JsonSerializer.Serialize(enabled)
+                    Value = enabled
                 };
                 return await Task.FromResult(ack);
             };
@@ -45,27 +46,26 @@ namespace wprops_demo
             {
                 Console.WriteLine("Received interval");
                 interval = req.Value;
-                var ack =  new PropertyAck
+                var ack =  new WritableProperty<int>("interval")
                 {
                     Description = "desired notification accepted",
                     Status = 200,
                     Version = Convert.ToInt32(req?.Version),
-                    Value = JsonSerializer.Serialize(interval)
+                    Value = interval
                 };
                 return await Task.FromResult(ack);
             };
             client.OnCommand_getRuntimeStats_Invoked = getRuntimeStats;
+            await client.InitTwinAsync();
+            await client.Report_started_Async(DateTime.Now);
+            
 
-            await client.Report_started(DateTime.Now);
-
-            var twin = await client.GetTwinAsync();
-            Console.WriteLine(twin);
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 await client.Send_workingSet_Async(Environment.WorkingSet);
                 _logger.LogInformation("Worker running at: {time}", DateTimeOffset.Now);
-                await Task.Delay(1000, stoppingToken);
+                await Task.Delay(5000, stoppingToken);
             }
         }
 

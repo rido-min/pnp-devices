@@ -13,7 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="rido.wprops.dtdl.json" />
+    <None Include="dtdl\rido.wprops.dtdl.json" />
   </ItemGroup>
 
   <ItemGroup>
