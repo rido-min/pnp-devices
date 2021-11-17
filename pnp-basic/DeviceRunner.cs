@@ -77,10 +77,10 @@ public class DeviceRunner : BackgroundService
         twinCounter++;
         var ack = new WritableProperty<bool>("enabled")
         {
-            Description = (client?.Property_enabled?.Value == true) ? "desired notification accepted" : "disabled, not accepted",
-            Status = (client?.Property_enabled?.Value == true) ? 200 : 304,
+            Description = "desired notification accepted",
+            Status = 200,
             Version = Convert.ToInt32(req?.Version),
-            Value = req?.Value ?? false
+            Value = req.Value 
         };
         return await Task.FromResult(ack);
     }

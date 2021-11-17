@@ -48,6 +48,7 @@ namespace dtmi_rido
 
             var desiredVersion = desired?["$version"]?.GetValue<int>();
 
+            #region enabled
             var reported_enabled_version = reported?["enabled"]?["av"]?.GetValue<int>();
             if (reported_enabled_version == null)
             {
@@ -74,9 +75,21 @@ namespace dtmi_rido
                             Version = desiredVersion,
                             Value = Convert.ToBoolean(desired_enabled)
                         });
+                    await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", Property_enabled.ToAck());
                 }
             }
+            else if (desiredVersion == reported_enabled_version)
+            {
+                bool desired_enabled = desired?["enabled"]?.GetValue<bool>() ?? true;
+                Property_enabled = new WritableProperty<bool>("interval")
+                {
+                    Version = desiredVersion,
+                    Value = desired_enabled
+                };
+            }
+            #endregion
 
+            #region interval
             var reported_interval_version = reported?["interval"]?["av"]?.GetValue<int>();
             if (reported_interval_version == null)
             {
@@ -104,7 +117,18 @@ namespace dtmi_rido
                              Value = Convert.ToInt32(desired_interval)
                          });
                 }
-            } 
+                await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", Property_interval?.ToAck());
+            }
+            else if (desiredVersion == reported_interval_version)
+            {
+                int desired_interval = desired?["interval"]?.GetValue<int>() ?? 0;
+                Property_interval = new WritableProperty<int>("interval")
+                {
+                    Version = desiredVersion,
+                    Value = desired_interval
+                };
+            }
+            #endregion
         }
 
         void ConfigureSysTopicsCallbacks(IHubMqttConnection connection)
