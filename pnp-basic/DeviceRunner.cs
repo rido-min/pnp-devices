@@ -38,8 +38,11 @@ public class DeviceRunner : BackgroundService
         client = await dtmi_rido.pnp_basic.CreateDeviceClientAsync(_configuration.GetConnectionString("hub"));
         client.OnProperty_enabled_Updated = Property_enabled_UpdateHandler;
         client.OnProperty_interval_Updated = Property_interval_UpdateHandler;
-        client.OnCommand_getRuntimeStats_Invoked = getRuntimeStats;
-        await client.InitTwinAsync(default_enabled, default_interval);
+        client.OnCommand_getRuntimeStats_Invoked = Command_getRuntimeStats_Handler;
+        await client.InitTwinAsync(new Dictionary<string, object> { 
+            { "enabled", default_enabled },
+            { "interval", default_interval },
+        });
 
         await client.Report_started_Async(DateTime.Now);
 
@@ -65,7 +68,7 @@ public class DeviceRunner : BackgroundService
         var ack = new WritableProperty<int>("interval")
         {
             Description = (client?.Property_enabled?.Value == true) ? "desired notification accepted" : "disabled, not accepted",
-            Status = (client?.Property_enabled?.Value == true) ? 200 : 304,
+            Status = (client?.Property_enabled?.Value == true) ? 200 : 205,
             Version = Convert.ToInt32(req?.Version),
             Value = req?.Value ?? 0
         };
@@ -85,7 +88,7 @@ public class DeviceRunner : BackgroundService
         return await Task.FromResult(ack);
     }
 
-    async Task<Cmd_getRuntimeStats_Response> getRuntimeStats(Cmd_getRuntimeStats_Request req)
+    async Task<Cmd_getRuntimeStats_Response> Command_getRuntimeStats_Handler(Cmd_getRuntimeStats_Request req)
     {
         commandCounter++;
         var result = new Cmd_getRuntimeStats_Response()

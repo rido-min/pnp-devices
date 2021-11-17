@@ -33,13 +33,14 @@ namespace dtmi_rido
 
         public static async Task<pnp_basic> CreateDeviceClientAsync(string cs)
         {
+            if (cs == null) throw new ArgumentException("ConnectionString is null");
             var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId });
             await SubscribeToSysTopicsAsync(connection);
             var client = new pnp_basic(connection);
             return client;
         }
 
-        public async Task InitTwinAsync(bool defaultEnabled, int defaultInterval)
+        public async Task InitTwinAsync(Dictionary<string, object> defaults)
         {
             var twin = await GetTwinAsync();
             var root = JsonNode.Parse(twin);
@@ -57,16 +58,16 @@ namespace dtmi_rido
                     Version = desiredVersion,
                     Status = 203,
                     Description = "init with default values from device",
-                    Value = defaultEnabled
+                    Value = Convert.ToBoolean(defaults["enabled"])
                 };
                 await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", Property_enabled.ToAck());
             }
 
             if (desiredVersion > reported_enabled_version)
             {
-                if (OnProperty_enabled_Updated != null)
+                var desired_enabled = desired?["enabled"]?.GetValue<bool>();
+                if (OnProperty_enabled_Updated != null && desired_enabled.HasValue)
                 {
-                    var desired_enabled = desired?["enabled"]?.GetValue<bool>();
                     Property_enabled = await OnProperty_enabled_Updated.Invoke(
                         new WritableProperty<bool>("enabled")
                         {
@@ -80,11 +81,11 @@ namespace dtmi_rido
             }
             else if (desiredVersion == reported_enabled_version)
             {
-                bool desired_enabled = desired?["enabled"]?.GetValue<bool>() ?? true;
+                bool reported_enabled = reported?["enabled"]?["value"]?.GetValue<bool>() ?? Convert.ToBoolean(defaults["enabled"]);
                 Property_enabled = new WritableProperty<bool>("interval")
                 {
                     Version = desiredVersion,
-                    Value = desired_enabled
+                    Value = reported_enabled
                 };
             }
             #endregion
@@ -98,16 +99,16 @@ namespace dtmi_rido
                     Version = desiredVersion,
                     Status = 203,
                     Description = "init with default device value",
-                    Value = defaultInterval
+                    Value = Convert.ToInt32(defaults["interval"])
                 };
                 await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", Property_interval.ToAck());
             }
 
             if (desiredVersion > reported_interval_version)
             {
-                if (OnProperty_interval_Updated != null)
+                var desired_interval = desired?["interval"]?.GetValue<int>();
+                if (OnProperty_interval_Updated != null && desired_interval.HasValue)
                 {
-                    var desired_interval = desired?["interval"]?.GetValue<int>();
                     Property_interval = await OnProperty_interval_Updated.Invoke(
                          new WritableProperty<int>("interval")
                          {
@@ -121,11 +122,11 @@ namespace dtmi_rido
             }
             else if (desiredVersion == reported_interval_version)
             {
-                int desired_interval = desired?["interval"]?.GetValue<int>() ?? 0;
+                int reported_interval = reported?["interval"]?["value"]?.GetValue<int>() ?? Convert.ToInt32(defaults["interval"]);
                 Property_interval = new WritableProperty<int>("interval")
                 {
                     Version = desiredVersion,
-                    Value = desired_interval
+                    Value = reported_interval
                 };
             }
             #endregion
