@@ -44,7 +44,7 @@ public class Thermostat
 
     public Func<TargetTemperature, Task<PropertyAck>>? OntargetTemperatureUpdated = null;
 
-    public Func<Command_getMaxMinReport_Request, Command_getMaxMinReport_Response>? Command_getMaxMinReport = null;
+    public Func<Command_getMaxMinReport_Request, Task<Command_getMaxMinReport_Response>>? Command_getMaxMinReport = null;
 
     public static async Task<Thermostat> CreateAsync(string cs)
     {
@@ -90,11 +90,21 @@ public class Thermostat
             string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
             if (m.ApplicationMessage.Topic.StartsWith("$iothub/twin/PATCH/properties/desired"))
             {
-                JsonElement targetTemperature = JsonDocument.Parse(msg).RootElement.GetProperty("targetTemperature");
-#pragma warning disable CS8602 // Dereference of a possibly null reference.
-                var ack = await OntargetTemperatureUpdated?.Invoke(new TargetTemperature { targetTemperature = targetTemperature.GetDouble(), version = twinVersion });
-#pragma warning restore CS8602 // Dereference of a possibly null reference.
-                if (ack != null) await this.Report_targetTemperatureACK(ack);
+                TargetTemperature targetTemperature = new TargetTemperature()
+                {
+                    targetTemperature = JsonDocument.Parse(msg).RootElement.GetProperty("targetTemperature").GetDouble(),
+                    version = twinVersion
+                };
+                
+                if (OntargetTemperatureUpdated != null)
+                {
+                    var ack = await OntargetTemperatureUpdated.Invoke(targetTemperature);
+                    if (ack != null)
+                    {
+                        await this.Report_targetTemperatureACK(ack);
+                    }
+                }
+
             }
 
             if (m.ApplicationMessage.Topic.StartsWith("$iothub/twin/res/200"))
@@ -111,8 +121,12 @@ public class Thermostat
             if (m.ApplicationMessage.Topic.StartsWith("$iothub/methods/POST/getMaxMinReport"))
             {
                 msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
-                var resp = Command_getMaxMinReport?.Invoke(
-                    new Command_getMaxMinReport_Request { since = JsonSerializer.Deserialize<DateTime>(msg), _rid = rid });
+                Command_getMaxMinReport_Request request = new Command_getMaxMinReport_Request()
+                {
+                    since = JsonSerializer.Deserialize<DateTime>(msg),
+                    _rid = rid
+                };
+                var resp = await Command_getMaxMinReport?.Invoke(request);
                 await connection.PublishAsync($"$iothub/methods/res/{resp?._status}/?$rid={resp?._rid}", JsonSerializer.Serialize(resp));
             }
         };

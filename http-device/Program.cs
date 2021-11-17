@@ -1,4 +1,4 @@
-﻿string js(object o) => System.Text.Json.JsonSerializer.Serialize(o);
+﻿static string js(object o) => System.Text.Json.JsonSerializer.Serialize(o);
 
 var cs = Rido.IoTHubClient.ConnectionSettings.FromConnectionString(Environment.GetEnvironmentVariable("cs"));
 string urlTelemetry = $"https://{cs.HostName}/devices/{cs.DeviceId}/messages/events?api-version=2020-03-13";

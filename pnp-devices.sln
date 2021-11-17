@@ -12,7 +12,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "telemetry-samples", "telemetry-samples\telemetry-samples.csproj", "{E3FFDC14-1D74-497C-8372-3230B374D7B3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "http-device", "http-device\http-device.csproj", "{9F37EDF2-22B5-49E6-A148-A70CAB18AB64}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "http-device", "http-device\http-device.csproj", "{9F37EDF2-22B5-49E6-A148-A70CAB18AB64}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wprops-demo", "wprops-demo\wprops-demo.csproj", "{35B3A7AA-FCBB-48C3-B325-3EF10EB16868}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -32,6 +34,10 @@ Global
 		{9F37EDF2-22B5-49E6-A148-A70CAB18AB64}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F37EDF2-22B5-49E6-A148-A70CAB18AB64}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F37EDF2-22B5-49E6-A148-A70CAB18AB64}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35B3A7AA-FCBB-48C3-B325-3EF10EB16868}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35B3A7AA-FCBB-48C3-B325-3EF10EB16868}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35B3A7AA-FCBB-48C3-B325-3EF10EB16868}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35B3A7AA-FCBB-48C3-B325-3EF10EB16868}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

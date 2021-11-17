@@ -7,13 +7,14 @@ double temperature = Math.Round(rndDouble(18), 1);
 double maxTemp = 0d;
 Dictionary<DateTimeOffset, double> readings = new() { { DateTimeOffset.Now, temperature } };
 
-string connectionString = Environment.GetEnvironmentVariable("cs") ?? throw new ArgumentException("Env Var 'cs' not found.");
+string connectionString = Environment.GetEnvironmentVariable("dps") ?? throw new ArgumentException("Env Var 'cs' not found.");
 Thermostat thermostat = await Thermostat.CreateAsync(connectionString);
 Console.WriteLine(thermostat.connection.ConnectionSettings);
 
-thermostat.Command_getMaxMinReport = req =>
+thermostat.Command_getMaxMinReport = async req =>
 {
     Console.WriteLine("\n<- c: getMaxMinReport " + req.since);
+    await Task.Delay(200);
     Dictionary<DateTimeOffset, double> filteredReadings = readings
                                            .Where(i => i.Key > req.since)
                                            .ToDictionary(i => i.Key, i => i.Value);

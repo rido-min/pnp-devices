@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>dotnet-wprops_demo-7DA7268A-0A9A-474E-9C0E-6B86FF666A39</UserSecretsId>
+    <RootNamespace>wprops_demo</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Remove="rido.wprops.dtdl.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="rido.wprops.dtdl.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
+    <PackageReference Include="Rido.IoTHubClient" Version="0.0.8" />
+  </ItemGroup>
+</Project>
