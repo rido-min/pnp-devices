@@ -115,8 +115,9 @@ public class DeviceRunner : BackgroundService
             sb.AppendLine($"enabled:  {client?.Property_enabled?.Value}  \tversion: {client?.Property_enabled?.Version}             ");
             sb.AppendLine($"interval: {client?.Property_interval?.Value} \t\tversion: {client?.Property_interval?.Version}            ");
             sb.AppendLine("");
-            sb.AppendLine($"Command messages: {commandCounter}");
             sb.AppendLine($"Telemetry messages: {telemetryCounter}");
+            sb.AppendLine($"Twin messages: {twinCounter}");
+            sb.AppendLine($"Command messages: {commandCounter}");
             sb.AppendLine("");
             sb.AppendLine($"WorkingSet: {telemetryWorkingSet.Bytes()}");
             sb.AppendLine("");
