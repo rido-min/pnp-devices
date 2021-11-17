@@ -1,18 +1,14 @@
 ﻿using MQTTnet.Client.Publishing;
 using Rido.IoTHubClient;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Threading.Tasks;
 using System.Web;
 
-namespace rido.wprops_demo
+namespace dtmi_rido
 {
-    public class DeviceClient
+    public class wprops_demo
     {
         const string modelId = "dtmi:rido:wprops_demo;1";
         internal IHubMqttConnection _connection;
@@ -26,17 +22,17 @@ namespace rido.wprops_demo
         public WritableProperty<bool>? Property_enabled;
         public WritableProperty<int>? Property_interval;
 
-        public DeviceClient(IHubMqttConnection c)
+        public wprops_demo(IHubMqttConnection c)
         {
             _connection = c;
             ConfigureSysTopicsCallbacks(_connection);
         }
 
-        public static async Task<DeviceClient> CreateDeviceClientAsync(string cs)
+        public static async Task<wprops_demo> CreateDeviceClientAsync(string cs)
         {
             var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId });
             await SubscribeToSysTopicsAsync(connection);
-            var client = new DeviceClient(connection);
+            var client = new wprops_demo(connection);
             return client;
         }
 
@@ -151,7 +147,7 @@ namespace rido.wprops_demo
                 {
                     Cmd_getRuntimeStats_Request req = new Cmd_getRuntimeStats_Request()
                     {
-                        DiagnosticsMode = DiagnosticsMode.full,
+                        DiagnosticsMode = JsonSerializer.Deserialize<DiagnosticsMode>(msg),
                         _rid = rid
                     };
                     if (OnCommand_getRuntimeStats_Invoked != null)
