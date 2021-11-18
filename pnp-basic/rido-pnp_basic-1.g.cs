@@ -2,6 +2,7 @@
 #nullable enable
 
 using MQTTnet.Client.Publishing;
+using pnp_basic;
 using Rido.IoTHubClient;
 using System.Diagnostics;
 using System.Text;
@@ -81,7 +82,7 @@ namespace dtmi_rido
                     if (OnCommand_getRuntimeStats_Invoked != null)
                     {
                         var resp = await OnCommand_getRuntimeStats_Invoked.Invoke(req);
-                        await _connection.PublishAsync($"$iothub/methods/res/{resp?._status}/?$rid={resp?._rid}", resp);
+                        await _connection.PublishAsync($"$iothub/methods/res/{resp?.Status}/?$rid={rid}", resp);
                     }
                 }
 

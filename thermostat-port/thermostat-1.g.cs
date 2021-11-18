@@ -95,7 +95,7 @@ public class Thermostat
                     targetTemperature = JsonDocument.Parse(msg).RootElement.GetProperty("targetTemperature").GetDouble(),
                     version = twinVersion
                 };
-                
+
                 if (OntargetTemperatureUpdated != null)
                 {
                     var ack = await OntargetTemperatureUpdated.Invoke(targetTemperature);
@@ -126,8 +126,11 @@ public class Thermostat
                     since = JsonSerializer.Deserialize<DateTime>(msg),
                     _rid = rid
                 };
-                var resp = await Command_getMaxMinReport?.Invoke(request);
-                await connection.PublishAsync($"$iothub/methods/res/{resp?._status}/?$rid={resp?._rid}", JsonSerializer.Serialize(resp));
+                if (Command_getMaxMinReport != null)
+                {
+                    var resp = await Command_getMaxMinReport.Invoke(request);
+                    await connection.PublishAsync($"$iothub/methods/res/{resp?._status}/?$rid={resp?._rid}", JsonSerializer.Serialize(resp));
+                }
             }
         };
     }
