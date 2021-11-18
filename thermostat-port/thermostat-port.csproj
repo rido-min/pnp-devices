@@ -10,7 +10,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <PackageReference Include="Rido.IoTHubClient" Version="0.0.8" />
+	  <PackageReference Include="Rido.IoTHubClient" Version="0.0.9" />
 	</ItemGroup>
 	<ItemGroup>
 		<Using Include="Rido.IoTHubClient" />

@@ -43,93 +43,14 @@ namespace dtmi_rido
         public async Task InitTwinAsync(Dictionary<string, object> defaults)
         {
             var twin = await GetTwinAsync();
-            var root = JsonNode.Parse(twin);
-            var desired = root?["desired"];
-            var reported = root?["reported"];
 
-            var desiredVersion = desired?["$version"]?.GetValue<int>();
+            Property_enabled = WritableProperty<bool>.InitFromTwin(twin, "enabled", Convert.ToBoolean(defaults["enabled"]));
+            OnProperty_enabled_Updated?.Invoke(Property_enabled);
+            await UpdateTwin(Property_enabled.ToAck());
 
-            #region enabled
-            var reported_enabled_version = reported?["enabled"]?["av"]?.GetValue<int>();
-            if (reported_enabled_version == null)
-            {
-                Property_enabled = new WritableProperty<bool>("enabled")
-                {
-                    Version = desiredVersion,
-                    Status = 203,
-                    Description = "init with default values from device",
-                    Value = Convert.ToBoolean(defaults["enabled"])
-                };
-                await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", Property_enabled.ToAck());
-            }
-
-            if (desiredVersion > reported_enabled_version)
-            {
-                var desired_enabled = desired?["enabled"]?.GetValue<bool>();
-                if (OnProperty_enabled_Updated != null && desired_enabled.HasValue)
-                {
-                    Property_enabled = await OnProperty_enabled_Updated.Invoke(
-                        new WritableProperty<bool>("enabled")
-                        {
-                            Description = " echo " + "updated on init",
-                            Status = 201,
-                            Version = desiredVersion,
-                            Value = Convert.ToBoolean(desired_enabled)
-                        });
-                    await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", Property_enabled.ToAck());
-                }
-            }
-            else if (desiredVersion == reported_enabled_version)
-            {
-                bool reported_enabled = reported?["enabled"]?["value"]?.GetValue<bool>() ?? Convert.ToBoolean(defaults["enabled"]);
-                Property_enabled = new WritableProperty<bool>("interval")
-                {
-                    Version = desiredVersion,
-                    Value = reported_enabled
-                };
-            }
-            #endregion
-
-            #region interval
-            var reported_interval_version = reported?["interval"]?["av"]?.GetValue<int>();
-            if (reported_interval_version == null)
-            {
-                Property_interval = new WritableProperty<int>("interval")
-                {
-                    Version = desiredVersion,
-                    Status = 203,
-                    Description = "init with default device value",
-                    Value = Convert.ToInt32(defaults["interval"])
-                };
-                await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", Property_interval.ToAck());
-            }
-
-            if (desiredVersion > reported_interval_version)
-            {
-                var desired_interval = desired?["interval"]?.GetValue<int>();
-                if (OnProperty_interval_Updated != null && desired_interval.HasValue)
-                {
-                    Property_interval = await OnProperty_interval_Updated.Invoke(
-                         new WritableProperty<int>("interval")
-                         {
-                             Description = "pending update applied",
-                             Status = 201,
-                             Version = desiredVersion,
-                             Value = Convert.ToInt32(desired_interval)
-                         });
-                }
-                await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", Property_interval?.ToAck());
-            }
-            else if (desiredVersion == reported_interval_version)
-            {
-                int reported_interval = reported?["interval"]?["value"]?.GetValue<int>() ?? Convert.ToInt32(defaults["interval"]);
-                Property_interval = new WritableProperty<int>("interval")
-                {
-                    Version = desiredVersion,
-                    Value = reported_interval
-                };
-            }
-            #endregion
+            Property_interval = WritableProperty<int>.InitFromTwin(twin, "interval", Convert.ToInt32(defaults["interval"]));
+            OnProperty_interval_Updated?.Invoke(Property_interval);
+            await UpdateTwin(Property_interval.ToAck());
         }
 
         void ConfigureSysTopicsCallbacks(IHubMqttConnection connection)
@@ -192,7 +113,7 @@ namespace dtmi_rido
                     var intervalProperty = new WritableProperty<int>("interval")
                     {
                         Value = Convert.ToInt32(desired?["interval"]?.GetValue<int>()),
-                        Version = desired?["$version"]?.GetValue<int>()
+                        Version = desired?["$version"]?.GetValue<int>() ?? 0
                     };
                     var ack = await OnProperty_interval_Updated.Invoke(intervalProperty);
                     if (ack != null)
@@ -213,7 +134,7 @@ namespace dtmi_rido
                     var enabledProperty = new WritableProperty<bool>("enabled")
                     {
                         Value = Convert.ToBoolean(desired?["enabled"]?.GetValue<bool>()),
-                        Version = desired?["$version"]?.GetValue<int>(),
+                        Version = desired?["$version"]?.GetValue<int>() ?? 0,
                     };
                     var ack = await OnProperty_enabled_Updated.Invoke(enabledProperty);
                     if (ack != null)
@@ -265,13 +186,15 @@ namespace dtmi_rido
             {
                 report_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin PATCH: {s}"));
             }
-            return tcs.Task.Result;
+            return await tcs.Task;
         }
 
-        public async Task<int> Report_enabled_Async(WritableProperty<bool> enabledProp)
+        public async Task<int> UpdateTwin(object patch)
         {
             var tcs = new TaskCompletionSource<int>();
-            var puback = await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", enabledProp.ToAck());
+            var puback = await _connection.PublishAsync(
+                    $"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}",
+                        patch);
             if (puback.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 report_cb = s => tcs.TrySetResult(s);
@@ -280,22 +203,7 @@ namespace dtmi_rido
             {
                 report_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin PATCH: {s}"));
             }
-            return tcs.Task.Result;
-        }
-
-        public async Task<int> Report_interval_Async(WritableProperty<int> intervalProp)
-        {
-            var tcs = new TaskCompletionSource<int>();
-            var puback = await _connection.PublishAsync($"$iothub/twin/PATCH/properties/reported/?$rid={lastRid++}", intervalProp.ToAck());
-            if (puback.ReasonCode == MqttClientPublishReasonCode.Success)
-            {
-                report_cb = s => tcs.TrySetResult(s);
-            }
-            else
-            {
-                report_cb = s => tcs.TrySetException(new ApplicationException($"Error '{puback.ReasonCode}' publishing twin PATCH: {s}"));
-            }
-            return tcs.Task.Result;
+            return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(15));
         }
 
         public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet)

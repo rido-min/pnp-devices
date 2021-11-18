@@ -9,7 +9,7 @@
 	<ItemGroup>
 		<PackageReference Include="Humanizer" Version="2.13.14" />
 		<PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
-		<PackageReference Include="Rido.IoTHubClient" Version="0.0.8" />
+		<PackageReference Include="Rido.IoTHubClient" Version="0.0.9" />
 	</ItemGroup>
 
 	<ItemGroup>
