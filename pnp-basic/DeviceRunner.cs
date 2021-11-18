@@ -1,18 +1,15 @@
-using Humanizer;
-using Rido.IoTHubClient;
-using System.Diagnostics;
-using System.Reflection;
-using System.Runtime.Versioning;
 using System.Text;
+using System.Diagnostics;
+using Rido.IoTHubClient;
 using dtmi_rido;
+using Humanizer;
+
 namespace pnp_basic;
 
 public class DeviceRunner : BackgroundService
 {
-
     private readonly ILogger<DeviceRunner> _logger;
     private readonly IConfiguration _configuration;
-
 
     Timer? screenRefresher;
     readonly Stopwatch clock = Stopwatch.StartNew();
@@ -104,11 +101,11 @@ public class DeviceRunner : BackgroundService
             Status = 200
         };
 
-        result.Add("runtime version", Assembly.GetEntryAssembly()?.GetCustomAttribute<TargetFrameworkAttribute>()?.FrameworkName ?? "n/a");
+        //result.Add("runtime version", System.Reflection.Assembly.GetEntryAssembly()?.GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>()?.FrameworkName ?? "n/a");
         result.Add("machine name", Environment.MachineName);
         if (req.DiagnosticsMode == DiagnosticsMode.full)
         {
-            result.Add("this app:", Assembly.GetExecutingAssembly()?.FullName ?? "");
+            result.Add("this app:", System.Reflection.Assembly.GetExecutingAssembly()?.FullName ?? "");
             result.Add("os version", Environment.OSVersion.ToString());
             result.Add($"twin counter: ",  twinCounter.ToString());
             result.Add("telemetry counter: ", telemetryCounter.ToString());
