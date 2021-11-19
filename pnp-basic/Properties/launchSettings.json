@@ -1,16 +1,23 @@
 {
   "profiles": {
-    "pnp_basic": {
+    "pnp_basic-hub": {
       "commandName": "Project",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development",
         "ConnectionStrings__hub": "HostName=tests.azure-devices.net;DeviceId=pnpbasic-local;SharedAccessKey=HNx9XF5L0+otPpX0BsUoez0FEo3l6VwdlJDdiLWE+cU=",
-        "ConnectionStrings__central": "IdScope=0ne00434908;DeviceId=testtwo;SharedAccessKey=UrhertMKQ8Dz9cSHJPHZr4xn1KrYGGWfpguG+fAjLcE="
       },
       "dotnetRunMessages": true
     },
     "Docker": {
       "commandName": "Docker"
+    },
+    "pnp_basic-central": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "DOTNET_ENVIRONMENT": "Development",
+        "ConnectionStrings__hub": "IdScope=0ne00434908;DeviceId=testtwo;SharedAccessKey=UrhertMKQ8Dz9cSHJPHZr4xn1KrYGGWfpguG+fAjLcE="
+      },
+      "dotnetRunMessages": true
     }
   }
 }

@@ -8,16 +8,13 @@ using System.Text.Json;
 
 namespace dtmi_rido
 {
-    public class started : TwinProperty<DateTime> { }
-    public class enabled : WritableProperty<bool> { }
-    public class interval : WritableProperty<int> { }
+    public class Property_started : TwinProperty<DateTime> { }
+    public class Property_enabled : WritableProperty<bool> { }
+    public class Property_interval : WritableProperty<int> { }
 
     public class pnp_basic_service_api
     {
         static string js(object o) => System.Text.Json.JsonSerializer.Serialize(o);
-        public started? started { get; set; }
-        public enabled? enabled { get; set; }
-        public interval? interval { get; set; }
 
         RegistryManager rm;
         ServiceClient sc;
@@ -40,17 +37,17 @@ namespace dtmi_rido
             return result ?? throw new ApplicationException("error deserializing command response");
         }
 
-        public async Task<started> Read_started_Property(string deviceId)
+        public async Task<Property_started> Read_started_Property(string deviceId)
         {
             var twin = await rm.GetTwinAsync(deviceId);
-            started = new()
+            var started = new Property_started()
             {
                 Value = Convert.ToDateTime(twin.Properties.Reported["started"].Value),
                 Version = twin.Properties.Reported.Version
             };
             return started;
         }
-        public async Task<interval> Read_interval_Property(string deviceId) 
+        public async Task<Property_interval> Read_interval_Property(string deviceId) 
         {
             var twin = await rm.GetTwinAsync(deviceId);
             int? desired_interval_value = twin.Properties.Desired.Contains("interval") ? twin.Properties.Desired["interval"] : null;
@@ -63,7 +60,7 @@ namespace dtmi_rido
             {
                 interval_value = reported_interval_value.Value;
             }
-            interval = new()
+            var interval = new Property_interval()
             {
                 Value = interval_value.Value,
                 AckVersion = reported_interval_version ?? -1,
@@ -74,7 +71,7 @@ namespace dtmi_rido
             return interval;
         }
 
-        public async Task<enabled> Read_enabled_Property(string deviceId)
+        public async Task<Property_enabled> Read_enabled_Property(string deviceId)
         {
             var twin = await rm.GetTwinAsync(deviceId);
             bool? desired_enabled_value = twin.Properties.Desired.Contains("enabled") ? twin.Properties.Desired["enabled"].Value : null;
@@ -87,7 +84,7 @@ namespace dtmi_rido
             {
                 enabled_value = reported_enabled_value.Value;
             }
-            enabled = new()
+            var enabled = new Property_enabled()
             {
                 Value = enabled_value,
                 AckVersion = reported_enabled_version ?? -1,
