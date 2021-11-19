@@ -1,7 +1,7 @@
 ﻿//string hostname = "rido.azure-devices.net";
 using dtmi_rido;
 
-string deviceId = "pnpbasic-local";
+string deviceId = "pnpbasic03";
 pnp_basic_service_api sapi = new pnp_basic_service_api(Environment.GetEnvironmentVariable("cs"));
 
 var started = await sapi.Read_started_Property(deviceId);

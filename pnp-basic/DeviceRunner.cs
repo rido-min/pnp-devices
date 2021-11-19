@@ -24,7 +24,7 @@ public class DeviceRunner : BackgroundService
     dtmi_rido.pnp_basic? client;
 
     const bool default_enabled = true;
-    const int default_interval = 2;
+    const int default_interval = 234;
 
     public DeviceRunner(ILogger<DeviceRunner> logger, IConfiguration configuration)
     {
