@@ -45,7 +45,7 @@ public class DeviceRunner : BackgroundService
         client.OnCommand_getRuntimeStats_Invoked = Command_getRuntimeStats_Handler;
 
         _ = await client.Report_started_Async(DateTime.Now);
-
+            
         await client.InitProperty_interval_Async(default_interval);
         await client.InitProperty_enabled_Async(default_enabled);
                

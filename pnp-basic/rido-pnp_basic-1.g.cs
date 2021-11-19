@@ -25,6 +25,7 @@ namespace dtmi_rido
 
         public WritableProperty<bool>? Property_enabled;
         public WritableProperty<int>? Property_interval;
+        public DateTime Property_started { get; private set; }
 
         public pnp_basic(IHubMqttConnection c)
         {
@@ -185,6 +186,7 @@ namespace dtmi_rido
             if (puback.ReasonCode == MqttClientPublishReasonCode.Success)
             {
                 report_cb = s => tcs.TrySetResult(s);
+                Property_started = started;
             }
             else
             {

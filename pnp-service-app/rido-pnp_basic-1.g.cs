@@ -22,8 +22,9 @@ namespace dtmi_rido
         RegistryManager rm;
         ServiceClient sc;
 
-        public pnp_basic_service_api(string cs)
+        public pnp_basic_service_api(string? cs)
         {
+            ArgumentNullException.ThrowIfNull(cs);
             rm = RegistryManager.CreateFromConnectionString(cs);
             sc = ServiceClient.CreateFromConnectionString(cs);
         }
@@ -32,6 +33,8 @@ namespace dtmi_rido
         {
             CloudToDeviceMethod method = new CloudToDeviceMethod("getRuntimeStats");
             method.SetPayloadJson(js(req.DiagnosticsMode));
+            method.ConnectionTimeout = TimeSpan.FromSeconds(5);
+            method.ResponseTimeout = TimeSpan.FromSeconds(5);
             var resp = await sc.InvokeDeviceMethodAsync(deviceId, method);
             var result = JsonSerializer.Deserialize<Cmd_getRuntimeStats_Response>(resp.GetPayloadAsJson());
             return result ?? throw new ApplicationException("error deserializing command response");
@@ -50,19 +53,19 @@ namespace dtmi_rido
         public async Task<interval> Read_interval_Property(string deviceId) 
         {
             var twin = await rm.GetTwinAsync(deviceId);
-            int? desired_interval_value = twin.Properties.Desired["interval"];
+            int? desired_interval_value = twin.Properties.Desired.Contains("interval") ? twin.Properties.Desired["interval"] : null;
             int? reported_interval_value = twin.Properties.Reported["interval"]?["value"];
             int? reported_interval_version = twin.Properties.Reported["interval"]?["av"];
             int? reported_interval_status = twin.Properties.Reported["interval"]?["ac"];
             string? reported_interval_description = twin.Properties.Reported["interval"].Contains("ad") ? twin.Properties.Reported["interval"]?["ad"] : "";
-            int interval_value = desired_interval_value.Value;
+            int? interval_value = desired_interval_value.HasValue ? desired_interval_value : -1;
             if (reported_interval_value != null)
             {
                 interval_value = reported_interval_value.Value;
             }
             interval = new()
             {
-                Value = interval_value,
+                Value = interval_value.Value,
                 AckVersion = reported_interval_version ?? -1,
                 AckDescription = reported_interval_description,
                 AckStatus = reported_interval_status ?? -1,

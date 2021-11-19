@@ -3,8 +3,8 @@
     "pnp_basic": {
       "commandName": "Project",
       "environmentVariables": {
-        "ConnectionStrings__hub": "HostName=rido.azure-devices.net;DeviceId=t1;SharedAccessKey=0OxZTxEjyDG6ywRvlRNZSnbxgMdOOf0zI5ScC4+lLh8=",
         "DOTNET_ENVIRONMENT": "Development",
+        "ConnectionStrings__hub": "HostName=tests.azure-devices.net;DeviceId=pnpbasic-local;SharedAccessKey=HNx9XF5L0+otPpX0BsUoez0FEo3l6VwdlJDdiLWE+cU=",
         "ConnectionStrings__central": "IdScope=0ne00434908;DeviceId=testtwo;SharedAccessKey=UrhertMKQ8Dz9cSHJPHZr4xn1KrYGGWfpguG+fAjLcE="
       },
       "dotnetRunMessages": true

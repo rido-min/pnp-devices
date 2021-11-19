@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "pnp-service-app": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "cs": "HostName=tests.azure-devices.net;SharedAccessKeyName=iothubowner;SharedAccessKey=P5LfPNpLhLD/qJVOCTpuKXLi/9rmGqvkleB0quXxkws="
+      }
+    }
+  }
+}
