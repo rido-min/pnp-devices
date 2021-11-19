@@ -1,26 +1,26 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Worker">
-
-	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<RootNamespace>pnp_basic</RootNamespace>
-	</PropertyGroup>
-	<ItemGroup>
-		<PackageReference Include="Humanizer" Version="2.13.14" />
-		<PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
-		<PackageReference Include="Rido.IoTHubClient" Version="0.0.9" />
-	</ItemGroup>
-
-	<ItemGroup>
-		<Compile Update="rido-pnp_basic-1.g.cs">
-			<DependentUpon>rido-pnp_basic-1.json</DependentUpon>
-		</Compile>
-		<Compile Update="Cmd_getRuntimeStats_Request.cs">
-			<DependentUpon>rido-pnp_basic-1.json</DependentUpon>
-		</Compile>
-		<Compile Update="Cmd_getRuntimeStats_Response.cs">
-			<DependentUpon>rido-pnp_basic-1.json</DependentUpon>
-		</Compile>
-	</ItemGroup>
+﻿<Project Sdk="Microsoft.NET.Sdk.Worker;Microsoft.NET.Sdk.Publish">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>pnp_basic</RootNamespace>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Humanizer" Version="2.13.14" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.14.0" />
+    <PackageReference Include="Rido.IoTHubClient" Version="0.0.9" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Update="rido-pnp_basic-1.g.cs">
+      <DependentUpon>rido-pnp_basic-1.json</DependentUpon>
+    </Compile>
+    <Compile Update="Cmd_getRuntimeStats_Request.cs">
+      <DependentUpon>rido-pnp_basic-1.json</DependentUpon>
+    </Compile>
+    <Compile Update="Cmd_getRuntimeStats_Response.cs">
+      <DependentUpon>rido-pnp_basic-1.json</DependentUpon>
+    </Compile>
+  </ItemGroup>
 </Project>

@@ -35,7 +35,7 @@ public class DeviceRunner : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         Console.WriteLine("Connecting..");
-        client = await dtmi_rido.pnp_basic.CreateDeviceClientAsync(_configuration.GetConnectionString("central")) ?? 
+        client = await dtmi_rido.pnp_basic.CreateDeviceClientAsync(_configuration.GetConnectionString("hub")) ?? 
             throw new ApplicationException("Error creating MQTT Client");
 
         client._connection.OnMqttClientDisconnected += (o,e) => reconnectCounter++;
@@ -44,14 +44,11 @@ public class DeviceRunner : BackgroundService
         client.OnProperty_interval_Updated = Property_interval_UpdateHandler;
         client.OnCommand_getRuntimeStats_Invoked = Command_getRuntimeStats_Handler;
 
-        await client.InitTwinAsync(new Dictionary<string, object> { 
-            { "enabled", default_enabled },
-            { "interval", default_interval },
-        });
-
         _ = await client.Report_started_Async(DateTime.Now);
 
-        Console.Clear();
+        await client.InitProperty_interval_Async(default_interval);
+        await client.InitProperty_enabled_Async(default_enabled);
+               
         screenRefresher = new Timer(RefreshScreen, this, 1000, 0);
 
         while (!stoppingToken.IsCancellationRequested)
@@ -104,16 +101,18 @@ public class DeviceRunner : BackgroundService
 
         //result.Add("runtime version", System.Reflection.Assembly.GetEntryAssembly()?.GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>()?.FrameworkName ?? "n/a");
         result.Add("machine name", Environment.MachineName);
-        if (req.DiagnosticsMode == DiagnosticsMode.full)
+        result.Add("os version", Environment.OSVersion.ToString());
+        if (req.DiagnosticsMode == DiagnosticsMode.complete)
         {
             result.Add("this app:", System.Reflection.Assembly.GetExecutingAssembly()?.FullName ?? "");
-            result.Add("os version", Environment.OSVersion.ToString());
+        }
+        if (req.DiagnosticsMode == DiagnosticsMode.full)
+        {
             result.Add($"twin counter: ",  twinCounter.ToString());
             result.Add("telemetry counter: ", telemetryCounter.ToString());
             result.Add("command counter: ", commandCounter.ToString());
             result.Add("reconnects counter: ", reconnectCounter.ToString());
         }
-
         return await Task.FromResult(result);
     }
 

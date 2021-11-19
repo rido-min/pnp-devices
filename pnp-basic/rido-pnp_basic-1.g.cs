@@ -41,15 +41,18 @@ namespace dtmi_rido
             return client;
         }
 
-        public async Task InitTwinAsync(Dictionary<string, object> defaults)
+        public async Task InitProperty_enabled_Async(bool defaultEnabled)
         {
             var twin = await GetTwinAsync();
-
-            Property_enabled = WritableProperty<bool>.InitFromTwin(twin, "enabled", Convert.ToBoolean(defaults["enabled"]));
+            Property_enabled = WritableProperty<bool>.InitFromTwin(twin, "enabled", defaultEnabled);
             OnProperty_enabled_Updated?.Invoke(Property_enabled);
             await UpdateTwin(Property_enabled.ToAck());
+        }
 
-            Property_interval = WritableProperty<int>.InitFromTwin(twin, "interval", Convert.ToInt32(defaults["interval"]));
+        public async Task InitProperty_interval_Async(int defaultInterval)
+        {
+            var twin = await GetTwinAsync();
+            Property_interval = WritableProperty<int>.InitFromTwin(twin, "interval", defaultInterval);
             OnProperty_interval_Updated?.Invoke(Property_interval);
             await UpdateTwin(Property_interval.ToAck());
         }
