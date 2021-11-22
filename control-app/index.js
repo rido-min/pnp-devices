@@ -24,13 +24,13 @@ google.charts.setOnLoadCallback( () => {
 
 gbid('button_set_interval').onclick = () => {
     const interval = parseInt(gbid('input_interval').value, 10)
-    client.publish(`memmon/client1/props/set`, js({interval}))
+    client.publish(`pnp/client1/props/set`, js({interval}))
 }
 
 gbid('button_set_enabled').onclick = () => {
     const enabled = String(gbid('input_enabled').value)=='true'
     console.log(enabled)
-    client.publish(`memmon/client1/props/set`, js({enabled}))
+    client.publish(`pnp/client1/props/set`, js({enabled}))
 }
 
 gbid('button_cmd_getRuntimeStats').onclick = async () => {
@@ -40,7 +40,7 @@ gbid('button_cmd_getRuntimeStats').onclick = async () => {
 }
 
 const cmd_getRuntimeStats = diagMode => {
-    client.publish(`memmon/client1/commands/getRuntimeStats`, js(diagMode))
+    client.publish(`pnp/client1/commands/getRuntimeStats`, js(diagMode))
     return new Promise((resolve,reject) => {
         onCommandResponse = resp => resolve(resp)
     })
@@ -54,17 +54,17 @@ const cmd_getRuntimeStats = diagMode => {
     client.on('connect', () => {
         console.log('connected')
         
-        client.subscribe('memmon/+/telemetry', (e) => {
+        client.subscribe('pnp/+/telemetry', (e) => {
             if (e) throw e
             console.log('subscribed to telemetry')
         })
 
-        client.subscribe('memmon/+/props/reported/#', (e) => {
+        client.subscribe('pnp/+/props/reported/#', (e) => {
             if (e) throw e
             console.log('susbscribed to props reported')
         })
 
-        client.subscribe('memmon/+/commands/+/resp/#', (e) => {
+        client.subscribe('pnp/+/commands/+/resp/#', (e) => {
             if (e) throw e
             console.log('susbscribed to command reponses')
         })
@@ -72,17 +72,17 @@ const cmd_getRuntimeStats = diagMode => {
             const msg = m ? JSON.parse(m.toString()) : {};
             console.log(t, msg)
             did = t.split('/')[1]
-            if (t.startsWith(`memmon/client1/telemetry`)) {
+            if (t.startsWith(`pnp/client1/telemetry`)) {
                 data.addRow([new Date(),msg.workingSet])
                 chart.draw(data, chartOptions);
             }
 
-            if (t.startsWith(`memmon/client1/commands`)) {
+            if (t.startsWith(`pnp/client1/commands`)) {
                 console.log('command accepted: ', t)
                 onCommandResponse(msg)
             }
 
-            if (t.startsWith('memmon/client1/props/reported'))
+            if (t.startsWith('pnp/client1/props/reported'))
             {
                 if (msg.interval) gbid('input_interval').value = msg.interval.value
                 if (msg.enabled) gbid('input_enabled').value = msg.enabled.value

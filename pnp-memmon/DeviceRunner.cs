@@ -25,7 +25,7 @@ public class DeviceRunner : BackgroundService
     dtmi_rido_pnp.memmon_mqtt? client;
 
     const bool default_enabled = true;
-    const int default_interval = 444;
+    const int default_interval = 11;
 
     public DeviceRunner(ILogger<DeviceRunner> logger, IConfiguration configuration)
     {

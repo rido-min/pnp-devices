@@ -65,15 +65,13 @@ namespace dtmi_rido_pnp
 
         public async Task InitProperty_interval_Async(int defaultInterval)
         {
-            //var twin = await GetTwinAsync();
             Property_interval = new WritableProperty<int>("interval") { Value = defaultInterval };
-            //OnProperty_interval_Updated?.Invoke(Property_interval);
             await UpdateTwin(Property_interval.ToAck());
         }
 
         void ConfigureSysTopicsCallbacks(IMqttClient connection)
         {
-            connection.UseApplicationMessageReceivedHandler(async m =>
+           connection.UseApplicationMessageReceivedHandler(async m =>
            {
                var topic = m.ApplicationMessage.Topic;
                var segments = topic.Split('/');
@@ -89,14 +87,14 @@ namespace dtmi_rido_pnp
 
                string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
 
-               if (topic.StartsWith("memmon/client1/props/set"))
+               if (topic.StartsWith($"pnp/{ConnectionSettings?.DeviceId}/props/set"))
                {
                    JsonNode? root = JsonNode.Parse(msg);
                    await Invoke_interval_Callback(root);
                    await Invoke_enabled_Callback(root);
                }
 
-               if (topic.StartsWith($"memmon/client1/commands/getRuntimeStats"))
+               if (topic.StartsWith($"pnp/{ConnectionSettings?.DeviceId}/commands/getRuntimeStats"))
                {
                    Cmd_getRuntimeStats_Request req = new Cmd_getRuntimeStats_Request()
                    {
@@ -106,7 +104,7 @@ namespace dtmi_rido_pnp
                    if (OnCommand_getRuntimeStats_Invoked != null)
                    {
                        var resp = await OnCommand_getRuntimeStats_Invoked.Invoke(req);
-                       await PublishPayload($"memmon/client1/commands/getRuntimeStats/resp/{resp?.Status}/?$rid={rid}", resp);
+                       await PublishPayload($"pnp/{ConnectionSettings?.DeviceId}/commands/getRuntimeStats/resp/{resp?.Status}/?$rid={rid}", resp);
                    }
                }
            });
@@ -127,7 +125,7 @@ namespace dtmi_rido_pnp
                     if (ack != null)
                     {
                         Property_interval = ack;
-                        await _connection.PublishAsync($"memmon/client1/props/reported/?$rid={lastRid++}", ack.ToAck());
+                        await _connection.PublishAsync($"pnp/{ConnectionSettings?.DeviceId}/props/reported/?$rid={lastRid++}", ack.ToAck());
                     }
                 }
             }
@@ -148,7 +146,7 @@ namespace dtmi_rido_pnp
                     if (ack != null)
                     {
                         Property_enabled = ack;
-                        await PublishPayload($"memmon/client1/props/reported/?$rid={lastRid++}", ack.ToAck());
+                        await PublishPayload($"pnp/{ConnectionSettings?.DeviceId}/props/reported/?$rid={lastRid++}", ack.ToAck());
                     }
                 }
             }
@@ -160,21 +158,21 @@ namespace dtmi_rido_pnp
 
             var subres = await connection.SubscribeAsync(
                 new MqttClientSubscribeOptionsBuilder()
-                    .WithTopicFilter("memmon/client1/commands/#", MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce)
-                    .WithTopicFilter("memmon/client1/props/set/#", MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce)
+                    .WithTopicFilter("pnp/+/commands/#", MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce)
+                    .WithTopicFilter("pnp/+/props/set/#", MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce)
                     .Build(), CancellationToken.None);
 
             subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
         }
         
         public async Task<MqttClientPublishResult> Report_started_Async(DateTime started) =>  
-            await PublishPayload($"memmon/client1/props/reported/?$rid={lastRid++}", new { started });
+            await PublishPayload($"pnp/{ConnectionSettings?.DeviceId}/props/reported/?$rid={lastRid++}", new { started });
 
         public async Task<MqttClientPublishResult> UpdateTwin(object payload) => 
-            await PublishPayload($"memmon/client1/props/reported/?$rid={lastRid++}", payload);
+            await PublishPayload($"pnp/{ConnectionSettings?.DeviceId}/props/reported/?$rid={lastRid++}", payload);
 
         public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet) =>
-            await PublishPayload($"memmon/client1/telemetry", new { workingSet });
+            await PublishPayload($"pnp/{ConnectionSettings?.DeviceId}/telemetry", new { workingSet });
 
         private async Task<MqttClientPublishResult> PublishPayload(string? topic, object? payload)
         {
