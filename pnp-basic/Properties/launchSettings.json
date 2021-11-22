@@ -4,7 +4,7 @@
       "commandName": "Project",
       "environmentVariables": {
         "DOTNET_ENVIRONMENT": "Development",
-        "ConnectionStrings__hub": "HostName=tests.azure-devices.net;DeviceId=pnpbasic-local;SharedAccessKey=HNx9XF5L0+otPpX0BsUoez0FEo3l6VwdlJDdiLWE+cU=",
+        "ConnectionStrings__hub": "HostName=ridox.azure-devices.net;DeviceId=pnpbasic01;SharedAccessKey=jKtMfXRJwmMgbVpuLuqkE1hxw20THeMU96cJv/zsz+Q="
       },
       "dotnetRunMessages": true
     },
