@@ -15,6 +15,7 @@ namespace dtmi_rido_pnp
     {
         const string modelId = "dtmi:rido:pnp:memmon;1";
         internal IHubMqttConnection _connection;
+        public ConnectionSettings? ConnectionSettings => _connection?.ConnectionSettings;
 
         int lastRid;
 
