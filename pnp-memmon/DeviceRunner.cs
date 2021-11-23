@@ -20,7 +20,7 @@ public class DeviceRunner : BackgroundService
     int twinCounter = 0;
     int reconnectCounter = 0;
 
-    dtmi_rido_pnp.memmon? client;
+    dtmi_rido_pnp.memmon_mqtt? client;
 
     const bool default_enabled = true;
     const int default_interval = 8;
@@ -34,7 +34,7 @@ public class DeviceRunner : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogWarning("Connecting..");
-        client = await dtmi_rido_pnp.memmon.CreateDeviceClientAsync(_configuration.GetConnectionString("hub")) ??
+        client = await dtmi_rido_pnp.memmon_mqtt.CreateDeviceClientAsync(_configuration.GetConnectionString("hive")) ??
             throw new ApplicationException("Error creating MQTT Client");
 
         client._connection.OnMqttClientDisconnected += (o, e) => reconnectCounter++;
