@@ -3,6 +3,7 @@
 
 using MQTTnet;
 using MQTTnet.Client;
+using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Options;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
@@ -15,10 +16,99 @@ using System.Web;
 
 namespace dtmi_rido_pnp
 {
+
+    public class HiveConnection : IHubMqttConnection
+    {
+        public ConnectionSettings? ConnectionSettings { get; private set; }
+        public HiveConnection(ConnectionSettings connectionSettings)
+        {
+            this.ConnectionSettings = connectionSettings;
+            mqttClient = new MqttFactory().CreateMqttClient();
+            mqttClient.UseApplicationMessageReceivedHandler(m => OnMessage?.Invoke(m));
+            mqttClient.UseDisconnectedHandler(async e =>
+            {
+                OnMqttClientDisconnected?.Invoke(this, new DisconnectEventArgs()
+                {
+                    Exception = e.Exception,
+                    DisconnectReason = (DisconnectReason)e.Reason,
+                });
+            });  
+        }
+
+        public async Task ConnectAsync()
+        {
+            var connAck = await mqttClient.ConnectAsync(new MqttClientOptionsBuilder()
+                                 .WithTcpServer(ConnectionSettings?.HostName, 8883).WithTls()
+                                 .WithClientId(ConnectionSettings?.DeviceId)
+                                 .WithCredentials(ConnectionSettings?.DeviceId, ConnectionSettings?.SharedAccessKey)
+                                 .Build(),
+                                 CancellationToken.None);
+            if (connAck?.ResultCode != MqttClientConnectResultCode.Success)
+            {
+                throw new ApplicationException($"Error connecting: {connAck?.ResultCode} {connAck?.ReasonString}");
+            }
+        }
+
+        IMqttClient mqttClient;
+        public static async Task<IHubMqttConnection> CreateAsync(ConnectionSettings connectionSettings)
+        {
+            var conn = new HiveConnection(connectionSettings);
+            await conn.ConnectAsync();
+            return conn;
+        }
+
+
+        public bool IsConnected => mqttClient.IsConnected;
+
+        public Func<MqttApplicationMessageReceivedEventArgs, Task> OnMessage { get; set; }
+
+        public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected; // { get; set; }
+
+        public async Task CloseAsync() => await mqttClient.DisconnectAsync();
+
+
+        public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
+        {
+
+            string? jsonPayload;
+            if (payload is string)
+            {
+                jsonPayload = payload as string;
+            }
+            else
+            {
+                jsonPayload = JsonSerializer.Serialize(payload);
+            }
+            var message = new MqttApplicationMessageBuilder()
+                              .WithTopic(topic)
+                              .WithPayload(jsonPayload)
+                              .Build();
+
+            if (mqttClient != null)
+            {
+                var pubRes = await mqttClient.PublishAsync(message, CancellationToken.None);
+                if (pubRes.ReasonCode != MqttClientPublishReasonCode.Success)
+                {
+                    Trace.TraceError(pubRes.ReasonCode + pubRes.ReasonString);
+                }
+                return pubRes;
+            }
+            return new MqttClientPublishResult() { ReasonCode = MqttClientPublishReasonCode.UnspecifiedError };
+        }
+
+        public async Task<MqttClientSubscribeResult> SubscribeAsync(string[] topics)
+        {
+            //subscribedTopics = topics;
+            var subBuilder = new MqttClientSubscribeOptionsBuilder();
+            topics.ToList().ForEach(t => subBuilder.WithTopicFilter(t, MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce));
+            return await mqttClient.SubscribeAsync(subBuilder.Build());
+        }
+    }
+
     public class memmon_mqtt
     {
         const string modelId = "dtmi:rido:pnp:memmon;1";
-        internal IMqttClient _connection;
+        internal IHubMqttConnection _connection;
 
         int lastRid;
 
@@ -32,7 +122,7 @@ namespace dtmi_rido_pnp
 
         public ConnectionSettings? ConnectionSettings { get; private set; }
 
-        public memmon_mqtt(IMqttClient c)
+        public memmon_mqtt(IHubMqttConnection c)
         {
             _connection = c;
             ConfigureSysTopicsCallbacks(_connection);
@@ -42,17 +132,8 @@ namespace dtmi_rido_pnp
         {
             ArgumentNullException.ThrowIfNull(cs);
             var connectionSettings = new ConnectionSettings(cs);
-            var conn = new MqttFactory().CreateMqttClient();
-            var connack = await conn.ConnectAsync(new MqttClientOptionsBuilder()
-                                    .WithTcpServer(connectionSettings.HostName, 8883).WithTls()
-                                    .WithClientId(connectionSettings.DeviceId)
-                                    .WithCredentials(connectionSettings.DeviceId, connectionSettings.SharedAccessKey)
-                                    .Build(),
-                                    CancellationToken.None);
-            await SubscribeToSysTopicsAsync(conn);
-            var client = new memmon_mqtt(conn);
-            client.ConnectionSettings = connectionSettings;
-            return client;
+            IHubMqttConnection conn = await HiveConnection.CreateAsync(connectionSettings);
+            return new memmon_mqtt(conn);
         }
 
         public async Task InitProperty_enabled_Async(bool defaultEnabled)
@@ -69,45 +150,45 @@ namespace dtmi_rido_pnp
             await UpdateTwin(Property_interval.ToAck());
         }
 
-        void ConfigureSysTopicsCallbacks(IMqttClient connection)
+        void ConfigureSysTopicsCallbacks(IHubMqttConnection connection)
         {
-           connection.UseApplicationMessageReceivedHandler(async m =>
-           {
-               var topic = m.ApplicationMessage.Topic;
-               var segments = topic.Split('/');
-               int rid = 0;
-               int twinVersion = 0;
-               if (topic.Contains('?'))
-               {
-                   // parse qs to extract the rid
-                   var qs = HttpUtility.ParseQueryString(segments[^1]);
-                   rid = Convert.ToInt32(qs["$rid"]);
-                   twinVersion = Convert.ToInt32(qs["$version"]);
-               }
+            connection.OnMessage = async m =>
+            {
+                var topic = m.ApplicationMessage.Topic;
+                var segments = topic.Split('/');
+                int rid = 0;
+                int twinVersion = 0;
+                if (topic.Contains('?'))
+                {
+                    // parse qs to extract the rid
+                    var qs = HttpUtility.ParseQueryString(segments[^1]);
+                    rid = Convert.ToInt32(qs["$rid"]);
+                    twinVersion = Convert.ToInt32(qs["$version"]);
+                }
 
-               string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
+                string msg = Encoding.UTF8.GetString(m.ApplicationMessage.Payload ?? Array.Empty<byte>());
 
-               if (topic.StartsWith($"pnp/{ConnectionSettings?.DeviceId}/props/set"))
-               {
-                   JsonNode? root = JsonNode.Parse(msg);
-                   await Invoke_interval_Callback(root);
-                   await Invoke_enabled_Callback(root);
-               }
+                if (topic.StartsWith($"pnp/{ConnectionSettings?.DeviceId}/props/set"))
+                {
+                    JsonNode? root = JsonNode.Parse(msg);
+                    await Invoke_interval_Callback(root);
+                    await Invoke_enabled_Callback(root);
+                }
 
-               if (topic.StartsWith($"pnp/{ConnectionSettings?.DeviceId}/commands/getRuntimeStats"))
-               {
-                   Cmd_getRuntimeStats_Request req = new Cmd_getRuntimeStats_Request()
-                   {
-                       DiagnosticsMode = JsonSerializer.Deserialize<DiagnosticsMode>(msg),
-                       //_rid = rid
-                   };
-                   if (OnCommand_getRuntimeStats_Invoked != null)
-                   {
-                       var resp = await OnCommand_getRuntimeStats_Invoked.Invoke(req);
-                       await PublishPayload($"pnp/{ConnectionSettings?.DeviceId}/commands/getRuntimeStats/resp/{resp?.Status}/?$rid={rid}", resp);
-                   }
-               }
-           });
+                if (topic.StartsWith($"pnp/{ConnectionSettings?.DeviceId}/commands/getRuntimeStats"))
+                {
+                    Cmd_getRuntimeStats_Request req = new Cmd_getRuntimeStats_Request()
+                    {
+                        DiagnosticsMode = JsonSerializer.Deserialize<DiagnosticsMode>(msg),
+                        //_rid = rid
+                    };
+                    if (OnCommand_getRuntimeStats_Invoked != null)
+                    {
+                        var resp = await OnCommand_getRuntimeStats_Invoked.Invoke(req);
+                        await _connection.PublishAsync($"pnp/{ConnectionSettings?.DeviceId}/commands/getRuntimeStats/resp/{resp?.Status}/?$rid={rid}", resp);
+                    }
+                }
+            };
         }
 
         private async Task Invoke_interval_Callback(JsonNode? desired)
@@ -146,52 +227,31 @@ namespace dtmi_rido_pnp
                     if (ack != null)
                     {
                         Property_enabled = ack;
-                        await PublishPayload($"pnp/{ConnectionSettings?.DeviceId}/props/reported/?$rid={lastRid++}", ack.ToAck());
+                        await _connection.PublishAsync($"pnp/{ConnectionSettings?.DeviceId}/props/reported/?$rid={lastRid++}", ack.ToAck());
                     }
                 }
             }
         }
 
-        private static async Task SubscribeToSysTopicsAsync(IMqttClient connection)
+        private static async Task SubscribeToSysTopicsAsync(IHubMqttConnection connection)
         {
-            new MqttClientSubscribeOptionsBuilder();
-
-            var subres = await connection.SubscribeAsync(
-                new MqttClientSubscribeOptionsBuilder()
-                    .WithTopicFilter("pnp/+/commands/#", MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce)
-                    .WithTopicFilter("pnp/+/props/set/#", MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce)
-                    .Build(), CancellationToken.None);
-
+            var subres = await connection.SubscribeAsync(new string[]
+                                                            {
+                                                                "pnp/+/commands/#",
+                                                                "pnp/+/props/set/#"
+                                                            });
             subres.Items.ToList().ForEach(x => Trace.TraceInformation($"+ {x.TopicFilter.Topic} {x.ResultCode}"));
         }
-        
-        public async Task<MqttClientPublishResult> Report_started_Async(DateTime started) =>  
-            await PublishPayload($"pnp/{ConnectionSettings?.DeviceId}/props/reported/?$rid={lastRid++}", new { started });
 
-        public async Task<MqttClientPublishResult> UpdateTwin(object payload) => 
-            await PublishPayload($"pnp/{ConnectionSettings?.DeviceId}/props/reported/?$rid={lastRid++}", payload);
+        public async Task<MqttClientPublishResult> Report_started_Async(DateTime started) =>
+            await _connection.PublishAsync($"pnp/{ConnectionSettings?.DeviceId}/props/reported/?$rid={lastRid++}", new { started });
+
+        public async Task<MqttClientPublishResult> UpdateTwin(object payload) =>
+            await _connection.PublishAsync($"pnp/{ConnectionSettings?.DeviceId}/props/reported/?$rid={lastRid++}", payload);
 
         public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet) =>
-            await PublishPayload($"pnp/{ConnectionSettings?.DeviceId}/telemetry", new { workingSet });
+            await _connection.PublishAsync($"pnp/{ConnectionSettings?.DeviceId}/telemetry", new { workingSet });
 
-        private async Task<MqttClientPublishResult> PublishPayload(string? topic, object? payload)
-        {
-            string? jsonPayload;
-
-            if (payload is string)
-            {
-                jsonPayload = payload as string;
-            }
-            else
-            {
-                jsonPayload = JsonSerializer.Serialize(payload);
-            }
-            return await _connection.PublishAsync(
-                   new MqttApplicationMessageBuilder()
-                   .WithTopic(topic)
-                   .WithPayload(jsonPayload)
-                   .Build());
-        }
 
     }
 }

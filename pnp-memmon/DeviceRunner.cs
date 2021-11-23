@@ -3,7 +3,6 @@ using System.Diagnostics;
 using Rido.IoTHubClient;
 using dtmi_rido_pnp;
 using Humanizer;
-using MQTTnet.Client;
 
 namespace pnp_memmon;
 
@@ -25,7 +24,7 @@ public class DeviceRunner : BackgroundService
     dtmi_rido_pnp.memmon_mqtt? client;
 
     const bool default_enabled = true;
-    const int default_interval = 11;
+    const int default_interval = 234;
 
     public DeviceRunner(ILogger<DeviceRunner> logger, IConfiguration configuration)
     {
@@ -35,11 +34,11 @@ public class DeviceRunner : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogWarning("Connecting..");
+        Console.WriteLine("Connecting..");
         client = await dtmi_rido_pnp.memmon_mqtt.CreateDeviceClientAsync(_configuration.GetConnectionString("hive")) ??
             throw new ApplicationException("Error creating MQTT Client");
 
-        client._connection.UseDisconnectedHandler( e => reconnectCounter++);
+        client._connection.OnMqttClientDisconnected += (o, e) => reconnectCounter++;
 
         client.OnProperty_enabled_Updated = Property_enabled_UpdateHandler;
         client.OnProperty_interval_Updated = Property_interval_UpdateHandler;
@@ -49,7 +48,7 @@ public class DeviceRunner : BackgroundService
 
         await client.InitProperty_interval_Async(default_interval);
         await client.InitProperty_enabled_Async(default_enabled);
-        
+
         screenRefresher = new Timer(RefreshScreen, this, 1000, 0);
 
         while (!stoppingToken.IsCancellationRequested)
@@ -72,7 +71,7 @@ public class DeviceRunner : BackgroundService
         {
             Description = "desired notification accepted",
             Status = 200,
-            //Version = Convert.ToInt32(req?.Version),
+            Version = Convert.ToInt32(req?.Version),
             Value = req?.Value
         };
         return await Task.FromResult(ack);
@@ -81,33 +80,12 @@ public class DeviceRunner : BackgroundService
     async Task<WritableProperty<int>> Property_interval_UpdateHandler(WritableProperty<int> req)
     {
         twinCounter++;
-        var description = "property update received";
-        var status = 200;
-        var acceptedValue = client?.Property_interval?.Value;
-        
-        if (client?.Property_enabled?.Value == false)
-        {
-            description = "Rejected, sensor is not enabled";
-            status = 405;
-
-        }
-
-        if (req.Value<0)
-        {
-            description = "Rejected, only positive values";
-            status = 406;
-        } 
-        else
-        {
-            acceptedValue = req?.Value;
-        }
-
         var ack = new WritableProperty<int>("interval")
         {
-            Description = description,
-            Status = status,
-            //Version = Convert.ToInt32(req?.Version),
-            Value = acceptedValue
+            Description = (client?.Property_enabled?.Value == true) ? "desired notification accepted" : "disabled, not accepted",
+            Status = (client?.Property_enabled?.Value == true) ? 200 : 205,
+            Version = Convert.ToInt32(req?.Version),
+            Value = req?.Value ?? 0
         };
         return await Task.FromResult(ack);
     }
