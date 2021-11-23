@@ -5,12 +5,7 @@ using MQTTnet.Client.Options;
 using MQTTnet.Client.Publishing;
 using MQTTnet.Client.Subscribing;
 using Rido.IoTHubClient;
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace pnp_memmon
 {
@@ -62,8 +57,6 @@ namespace pnp_memmon
 
 
         public bool IsConnected => mqttClient.IsConnected;
-
-        
 
         public async Task CloseAsync() => await mqttClient.DisconnectAsync();
 

@@ -10,8 +10,7 @@ public class DeviceRunner : BackgroundService
 {
     private readonly ILogger<DeviceRunner> _logger;
     private readonly IConfiguration _configuration;
-
-    Timer? screenRefresher;
+    private Timer? screenRefresher;
     readonly Stopwatch clock = Stopwatch.StartNew();
 
     double telemetryWorkingSet = 0;
@@ -34,7 +33,7 @@ public class DeviceRunner : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        Console.WriteLine("Connecting..");
+        _logger.LogWarning("Connecting..");
         client = await dtmi_rido_pnp.memmon.CreateDeviceClientAsync(_configuration.GetConnectionString("hub")) ??
             throw new ApplicationException("Error creating MQTT Client");
 
