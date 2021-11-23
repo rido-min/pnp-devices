@@ -10,8 +10,7 @@ public class DeviceRunner : BackgroundService
 {
     private readonly ILogger<DeviceRunner> _logger;
     private readonly IConfiguration _configuration;
-
-    Timer? screenRefresher;
+    private Timer? screenRefresher;
     readonly Stopwatch clock = Stopwatch.StartNew();
 
     double telemetryWorkingSet = 0;
@@ -24,7 +23,7 @@ public class DeviceRunner : BackgroundService
     dtmi_rido_pnp.memmon? client;
 
     const bool default_enabled = true;
-    const int default_interval = 234;
+    const int default_interval = 8;
 
     public DeviceRunner(ILogger<DeviceRunner> logger, IConfiguration configuration)
     {
@@ -126,8 +125,8 @@ public class DeviceRunner : BackgroundService
             string? interval_value = client?.Property_interval?.Value?.ToString();
             StringBuilder sb = new();
             AppendLineWithPadRight(sb, " ");
-            AppendLineWithPadRight(sb, client?._connection?.ConnectionSettings?.HostName);
-            AppendLineWithPadRight(sb, $"{client?._connection?.ConnectionSettings?.DeviceId} ({client?._connection?.ConnectionSettings?.Auth})");
+            AppendLineWithPadRight(sb, client?.ConnectionSettings?.HostName);
+            AppendLineWithPadRight(sb, $"{client?.ConnectionSettings?.DeviceId} ({client?.ConnectionSettings?.Auth})");
             AppendLineWithPadRight(sb, " ");
             AppendLineWithPadRight(sb, String.Format("{0:8} | {1:5} | {2}", "Property", "Value", "Version"));
             AppendLineWithPadRight(sb, String.Format("{0:8} | {1:5} | {2}", "--------", "-----", "------"));

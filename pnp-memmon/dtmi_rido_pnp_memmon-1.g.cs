@@ -18,6 +18,7 @@ namespace dtmi_rido_pnp
 
         int lastRid;
 
+        public ConnectionSettings ConnectionSettings => _connection.ConnectionSettings;
         public Func<WritableProperty<bool>, Task<WritableProperty<bool>>>? OnProperty_enabled_Updated = null;
         public Func<WritableProperty<int>, Task<WritableProperty<int>>>? OnProperty_interval_Updated = null;
         public Func<Cmd_getRuntimeStats_Request, Task<Cmd_getRuntimeStats_Response>>? OnCommand_getRuntimeStats_Invoked = null;
