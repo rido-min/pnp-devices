@@ -14,8 +14,8 @@ namespace dtmi_rido_pnp
     public class memmon
     {
         const string modelId = "dtmi:rido:pnp:memmon;1";
-        internal IHubMqttConnection _connection;
-
+        internal IMqttConnection _connection;
+        string initialTwin = string.Empty;
         int lastRid;
 
         public ConnectionSettings ConnectionSettings => _connection.ConnectionSettings;
@@ -27,38 +27,53 @@ namespace dtmi_rido_pnp
         public WritableProperty<int>? Property_interval;
         public DateTime Property_started { get; private set; }
 
-        public memmon(IHubMqttConnection c)
+        private memmon(IMqttConnection c)
         {
             _connection = c;
             ConfigureSysTopicsCallbacks(_connection);
         }
 
-        public static async Task<memmon> CreateDeviceClientAsync(string cs)
+        public static async Task<memmon> CreateDeviceClientAsync(string cs, CancellationToken cancellationToken)
         {
-            if (cs == null) throw new ArgumentException("ConnectionString is null");
-            var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId });
+            ArgumentNullException.ThrowIfNull(cs);
+            var connection = await HubMqttConnection.CreateAsync(new ConnectionSettings(cs) { ModelId = modelId }, cancellationToken);
             await SubscribeToSysTopicsAsync(connection);
             var client = new memmon(connection);
+            client.initialTwin = await client.GetTwinAsync();
             return client;
         }
 
         public async Task InitProperty_enabled_Async(bool defaultEnabled)
         {
-            var twin = await GetTwinAsync();
-            Property_enabled = WritableProperty<bool>.InitFromTwin(twin, "enabled", defaultEnabled);
-            OnProperty_enabled_Updated?.Invoke(Property_enabled);
-            await UpdateTwin(Property_enabled.ToAck());
+            Property_enabled = WritableProperty<bool>.InitFromTwin(initialTwin, "enabled", defaultEnabled);
+            if (OnProperty_enabled_Updated != null && (Property_enabled.DesiredVersion > 1))
+            {
+                var ack = await OnProperty_enabled_Updated.Invoke(Property_enabled);
+                await UpdateTwin(ack.ToAck());
+                Property_enabled = ack;
+            }
+            else
+            {
+                await UpdateTwin(Property_enabled.ToAck());
+            }
         }
 
         public async Task InitProperty_interval_Async(int defaultInterval)
         {
-            var twin = await GetTwinAsync();
-            Property_interval = WritableProperty<int>.InitFromTwin(twin, "interval", defaultInterval);
-            OnProperty_interval_Updated?.Invoke(Property_interval);
-            await UpdateTwin(Property_interval.ToAck());
+            Property_interval = WritableProperty<int>.InitFromTwin(initialTwin, "interval", defaultInterval);
+            if (OnProperty_interval_Updated != null && (Property_interval.DesiredVersion > 1))
+            {
+                var ack = await OnProperty_interval_Updated.Invoke(Property_interval);
+                await UpdateTwin(ack.ToAck());
+                Property_interval = ack;
+            }
+            else
+            {
+                await UpdateTwin(Property_interval.ToAck());
+            }
         }
 
-        void ConfigureSysTopicsCallbacks(IHubMqttConnection connection)
+        void ConfigureSysTopicsCallbacks(IMqttConnection connection)
         {
             connection.OnMessage = async m =>
             {
@@ -151,7 +166,7 @@ namespace dtmi_rido_pnp
             }
         }
 
-        private static async Task SubscribeToSysTopicsAsync(HubMqttConnection connection)
+        private static async Task SubscribeToSysTopicsAsync(IMqttConnection connection)
         {
             var subres = await connection.SubscribeAsync(new string[] {
                                                     "$iothub/methods/POST/#",
@@ -212,11 +227,12 @@ namespace dtmi_rido_pnp
             return await tcs.Task.TimeoutAfter(TimeSpan.FromSeconds(15));
         }
 
-        public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet)
+        public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet) => await Send_workingSet_Async(workingSet, CancellationToken.None);
+        public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet, CancellationToken cancellationToken)
         {
             return await _connection.PublishAsync(
                 $"devices/{_connection.ConnectionSettings.DeviceId}/messages/events/",
-                new { workingSet });
+                new { workingSet }, cancellationToken);
         }
     }
 }

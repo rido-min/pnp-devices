@@ -34,7 +34,7 @@ public class DeviceRunner : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogWarning("Connecting..");
-        client = await dtmi_rido_pnp.memmon.CreateDeviceClientAsync(_configuration.GetConnectionString("hub")) ??
+        client = await dtmi_rido_pnp.memmon.CreateDeviceClientAsync(_configuration.GetConnectionString("hub"), stoppingToken) ??
             throw new ApplicationException("Error creating MQTT Client");
 
         client._connection.OnMqttClientDisconnected += (o, e) => reconnectCounter++;
@@ -45,8 +45,8 @@ public class DeviceRunner : BackgroundService
 
         _ = await client.Report_started_Async(DateTime.Now);
 
-        await client.InitProperty_interval_Async(default_interval);
         await client.InitProperty_enabled_Async(default_enabled);
+        await client.InitProperty_interval_Async(default_interval);
 
         screenRefresher = new Timer(RefreshScreen, this, 1000, 0);
 
@@ -55,7 +55,7 @@ public class DeviceRunner : BackgroundService
             if (client?.Property_enabled?.Value == true)
             {
                 telemetryWorkingSet = Environment.WorkingSet;
-                await client.Send_workingSet_Async(telemetryWorkingSet);
+                await client.Send_workingSet_Async(telemetryWorkingSet, stoppingToken);
                 telemetryCounter++;
             }
             var interval = client?.Property_interval?.Value;
@@ -70,21 +70,22 @@ public class DeviceRunner : BackgroundService
         {
             Description = "desired notification accepted",
             Status = 200,
-            Version = Convert.ToInt32(req?.Version),
-            Value = req?.Value
+            Version = req.Version,
+            Value = req.Value
         };
         return await Task.FromResult(ack);
     }
 
     async Task<WritableProperty<int>> Property_interval_UpdateHandler(WritableProperty<int> req)
     {
+        ArgumentNullException.ThrowIfNull(client);
         twinCounter++;
         var ack = new WritableProperty<int>("interval")
         {
-            Description = (client?.Property_enabled?.Value == true) ? "desired notification accepted" : "disabled, not accepted",
-            Status = (client?.Property_enabled?.Value == true) ? 200 : 205,
-            Version = Convert.ToInt32(req?.Version),
-            Value = req?.Value ?? 0
+            Description = (client.Property_enabled?.Value == true) ? "desired notification accepted" : "disabled, not accepted",
+            Status = (client.Property_enabled?.Value == true) ? 200 : 205,
+            Version = req.Version,
+            Value = req.Value
         };
         return await Task.FromResult(ack);
     }
@@ -121,8 +122,8 @@ public class DeviceRunner : BackgroundService
         {
             void AppendLineWithPadRight(StringBuilder sb, string? s) => sb.AppendLine(s?.PadRight(Console.BufferWidth));
 
-            string? enabled_value = client?.Property_enabled?.Value?.ToString();
-            string? interval_value = client?.Property_interval?.Value?.ToString();
+            string? enabled_value = client?.Property_enabled?.Value.ToString();
+            string? interval_value = client?.Property_interval?.Value.ToString();
             StringBuilder sb = new();
             AppendLineWithPadRight(sb, " ");
             AppendLineWithPadRight(sb, client?.ConnectionSettings?.HostName);
