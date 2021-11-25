@@ -23,12 +23,14 @@ namespace dtmi_rido_pnp
         ConcurrentDictionary<int, TaskCompletionSource<int>> pendingUpdateTwinRequests = new ConcurrentDictionary<int, TaskCompletionSource<int>>();
 
         public ConnectionSettings ConnectionSettings => _connection.ConnectionSettings;
+
         public Func<WritableProperty<bool>, Task<WritableProperty<bool>>>? OnProperty_enabled_Updated = null;
         public Func<WritableProperty<int>, Task<WritableProperty<int>>>? OnProperty_interval_Updated = null;
         public Func<Cmd_getRuntimeStats_Request, Task<Cmd_getRuntimeStats_Response>>? OnCommand_getRuntimeStats_Invoked = null;
 
         public WritableProperty<bool>? Property_enabled;
         public WritableProperty<int>? Property_interval;
+
         public DateTime Property_started { get; private set; }
 
         private memmon(IMqttConnection c)

@@ -1,0 +1,1 @@
+﻿az container create --resource-group quicktests --name pnptests-memmon-aci-1 --image 'ridockers.azurecr.io/pnpmemmon:20211125052811' --environment-variables 'ConnectionStrings__hub'='IdScope=0ne00434908;DeviceId=memmon-aci-01;SharedAccessKey=oTThIaFI34NumYhEveEHimjsqI07ka8UenpDV0RWtFQ='
