@@ -17,8 +17,9 @@ public class DeviceRunner : BackgroundService
 
     int telemetryCounter = 0;
     int commandCounter = 0;
-    int twinCounter = 0;
+    int twinRecCounter = 0;
     int reconnectCounter = 0;
+
 
     dtmi_rido_pnp.memmon? client;
 
@@ -65,7 +66,7 @@ public class DeviceRunner : BackgroundService
 
     async Task<WritableProperty<bool>> Property_enabled_UpdateHandler(WritableProperty<bool> req)
     {
-        twinCounter++;
+        twinRecCounter++;
         var ack = new WritableProperty<bool>("enabled")
         {
             Description = "desired notification accepted",
@@ -79,7 +80,7 @@ public class DeviceRunner : BackgroundService
     async Task<WritableProperty<int>> Property_interval_UpdateHandler(WritableProperty<int> req)
     {
         ArgumentNullException.ThrowIfNull(client);
-        twinCounter++;
+        twinRecCounter++;
         var ack = new WritableProperty<int>("interval")
         {
             Description = (client.Property_enabled?.Value == true) ? "desired notification accepted" : "disabled, not accepted",
@@ -102,16 +103,19 @@ public class DeviceRunner : BackgroundService
         //result.Add("runtime version", System.Reflection.Assembly.GetEntryAssembly()?.GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>()?.FrameworkName ?? "n/a");
         result.Add("machine name", Environment.MachineName);
         result.Add("os version", Environment.OSVersion.ToString());
+        result.Add("time running", clock.Elapsed.Humanize());
         if (req.DiagnosticsMode == DiagnosticsMode.complete)
         {
             result.Add("this app:", System.Reflection.Assembly.GetExecutingAssembly()?.FullName ?? "");
+            result.Add("Rido.IoTHubClient", typeof(Rido.IoTHubClient.CommandRequest).AssemblyQualifiedName);
         }
         if (req.DiagnosticsMode == DiagnosticsMode.full)
         {
-            result.Add($"twin counter: ", twinCounter.ToString());
-            result.Add("telemetry counter: ", telemetryCounter.ToString());
-            result.Add("command counter: ", commandCounter.ToString());
-            result.Add("reconnects counter: ", reconnectCounter.ToString());
+            result.Add($"twin receive", twinRecCounter.ToString());
+            result.Add($"twin send", client?.lastRid.ToString());
+            result.Add("telemetry", telemetryCounter.ToString());
+            result.Add("command", commandCounter.ToString());
+            result.Add("reconnects", reconnectCounter.ToString());
         }
         return await Task.FromResult(result);
     }
@@ -135,8 +139,9 @@ public class DeviceRunner : BackgroundService
             AppendLineWithPadRight(sb, String.Format("{0:8} | {1:5} | {2}", "interval".PadRight(8), interval_value?.PadLeft(5), client?.Property_interval?.Version));
             AppendLineWithPadRight(sb, " ");
             AppendLineWithPadRight(sb, $"Reconnects: {reconnectCounter}");
-            AppendLineWithPadRight(sb, $"Telemetry messages: {telemetryCounter}");
-            AppendLineWithPadRight(sb, $"Twin messages: {twinCounter}");
+            AppendLineWithPadRight(sb, $"Telemetry: {telemetryCounter}");
+            AppendLineWithPadRight(sb, $"Twin receive: {twinRecCounter}");
+            AppendLineWithPadRight(sb, $"Twin send: {client?.lastRid}");
             AppendLineWithPadRight(sb, $"Command messages: {commandCounter}");
             AppendLineWithPadRight(sb, " ");
             AppendLineWithPadRight(sb, $"WorkingSet: {telemetryWorkingSet.Bytes()}");
