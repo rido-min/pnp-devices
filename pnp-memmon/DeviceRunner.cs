@@ -17,10 +17,11 @@ public class DeviceRunner : BackgroundService
 
     int telemetryCounter = 0;
     int commandCounter = 0;
-    int twinCounter = 0;
+    int twinRecCounter = 0;
     int reconnectCounter = 0;
 
-    dtmi_rido_pnp.memmon_mqtt? client;
+
+    dtmi_rido_pnp.memmon? client;
 
     const bool default_enabled = true;
     const int default_interval = 8;
@@ -34,7 +35,7 @@ public class DeviceRunner : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogWarning("Connecting..");
-        client = await dtmi_rido_pnp.memmon_mqtt.CreateDeviceClientAsync(_configuration.GetConnectionString("hive")) ??
+        client = await dtmi_rido_pnp.memmon.CreateDeviceClientAsync(_configuration.GetConnectionString("hub"), stoppingToken) ??
             throw new ApplicationException("Error creating MQTT Client");
 
         client._connection.OnMqttClientDisconnected += (o, e) => reconnectCounter++;
@@ -45,8 +46,8 @@ public class DeviceRunner : BackgroundService
 
         _ = await client.Report_started_Async(DateTime.Now);
 
-        await client.InitProperty_interval_Async(default_interval);
         await client.InitProperty_enabled_Async(default_enabled);
+        await client.InitProperty_interval_Async(default_interval);
 
         screenRefresher = new Timer(RefreshScreen, this, 1000, 0);
 
@@ -55,7 +56,7 @@ public class DeviceRunner : BackgroundService
             if (client?.Property_enabled?.Value == true)
             {
                 telemetryWorkingSet = Environment.WorkingSet;
-                await client.Send_workingSet_Async(telemetryWorkingSet);
+                await client.Send_workingSet_Async(telemetryWorkingSet, stoppingToken);
                 telemetryCounter++;
             }
             var interval = client?.Property_interval?.Value;
@@ -65,26 +66,27 @@ public class DeviceRunner : BackgroundService
 
     async Task<WritableProperty<bool>> Property_enabled_UpdateHandler(WritableProperty<bool> req)
     {
-        twinCounter++;
+        twinRecCounter++;
         var ack = new WritableProperty<bool>("enabled")
         {
             Description = "desired notification accepted",
             Status = 200,
-            Version = Convert.ToInt32(req?.Version),
-            Value = req?.Value
+            Version = req.Version,
+            Value = req.Value
         };
         return await Task.FromResult(ack);
     }
 
     async Task<WritableProperty<int>> Property_interval_UpdateHandler(WritableProperty<int> req)
     {
-        twinCounter++;
+        ArgumentNullException.ThrowIfNull(client);
+        twinRecCounter++;
         var ack = new WritableProperty<int>("interval")
         {
-            Description = (client?.Property_enabled?.Value == true) ? "desired notification accepted" : "disabled, not accepted",
-            Status = (client?.Property_enabled?.Value == true) ? 200 : 205,
-            Version = Convert.ToInt32(req?.Version),
-            Value = req?.Value ?? 0
+            Description = (client.Property_enabled?.Value == true) ? "desired notification accepted" : "disabled, not accepted",
+            Status = (client.Property_enabled?.Value == true) ? 200 : 205,
+            Version = req.Version,
+            Value = req.Value
         };
         return await Task.FromResult(ack);
     }
@@ -107,10 +109,11 @@ public class DeviceRunner : BackgroundService
         }
         if (req.DiagnosticsMode == DiagnosticsMode.full)
         {
-            result.Add($"twin counter: ", twinCounter.ToString());
-            result.Add("telemetry counter: ", telemetryCounter.ToString());
-            result.Add("command counter: ", commandCounter.ToString());
-            result.Add("reconnects counter: ", reconnectCounter.ToString());
+            result.Add("twin send", client?.lastRid.ToString());
+            result.Add($"twin receive: ", twinRecCounter.ToString());
+            result.Add("telemetry: ", telemetryCounter.ToString());
+            result.Add("command: ", commandCounter.ToString());
+            result.Add("reconnects: ", reconnectCounter.ToString());
         }
         return await Task.FromResult(result);
     }
@@ -121,8 +124,8 @@ public class DeviceRunner : BackgroundService
         {
             void AppendLineWithPadRight(StringBuilder sb, string? s) => sb.AppendLine(s?.PadRight(Console.BufferWidth));
 
-            string? enabled_value = client?.Property_enabled?.Value?.ToString();
-            string? interval_value = client?.Property_interval?.Value?.ToString();
+            string? enabled_value = client?.Property_enabled?.Value.ToString();
+            string? interval_value = client?.Property_interval?.Value.ToString();
             StringBuilder sb = new();
             AppendLineWithPadRight(sb, " ");
             AppendLineWithPadRight(sb, client?.ConnectionSettings?.HostName);
@@ -134,8 +137,9 @@ public class DeviceRunner : BackgroundService
             AppendLineWithPadRight(sb, String.Format("{0:8} | {1:5} | {2}", "interval".PadRight(8), interval_value?.PadLeft(5), client?.Property_interval?.Version));
             AppendLineWithPadRight(sb, " ");
             AppendLineWithPadRight(sb, $"Reconnects: {reconnectCounter}");
-            AppendLineWithPadRight(sb, $"Telemetry messages: {telemetryCounter}");
-            AppendLineWithPadRight(sb, $"Twin messages: {twinCounter}");
+            AppendLineWithPadRight(sb, $"Telemetry: {telemetryCounter}");
+            AppendLineWithPadRight(sb, $"Twin receive: {twinRecCounter}");
+            AppendLineWithPadRight(sb, $"Twin send: {client?.lastRid}");
             AppendLineWithPadRight(sb, $"Command messages: {commandCounter}");
             AppendLineWithPadRight(sb, " ");
             AppendLineWithPadRight(sb, $"WorkingSet: {telemetryWorkingSet.Bytes()}");

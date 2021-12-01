@@ -18,7 +18,7 @@ namespace dtmi_rido_pnp
     public class memmon_mqtt
     {
         const string modelId = "dtmi:rido:pnp:memmon;1";
-        internal IHubMqttConnection _connection;
+        internal IMqttConnection _connection;
 
         int lastRid;
 
@@ -32,7 +32,7 @@ namespace dtmi_rido_pnp
 
         public ConnectionSettings? ConnectionSettings => _connection.ConnectionSettings;
 
-        public memmon_mqtt(IHubMqttConnection c)
+        public memmon_mqtt(IMqttConnection c)
         {
             _connection = c;
             ConfigureSysTopicsCallbacks(_connection);
@@ -42,7 +42,7 @@ namespace dtmi_rido_pnp
         {
             ArgumentNullException.ThrowIfNull(cs);
             var connectionSettings = new ConnectionSettings(cs);
-            IHubMqttConnection conn = await HiveConnection.CreateAsync(connectionSettings);
+            IMqttConnection conn = await HiveConnection.CreateAsync(connectionSettings);
             await SubscribeToSysTopicsAsync(conn);
             return new memmon_mqtt(conn);
         }
@@ -61,7 +61,7 @@ namespace dtmi_rido_pnp
             await UpdateTwin(Property_interval.ToAck());
         }
 
-        void ConfigureSysTopicsCallbacks(IHubMqttConnection connection)
+        void ConfigureSysTopicsCallbacks(IMqttConnection connection)
         {
             connection.OnMessage = async m =>
             {
@@ -144,7 +144,7 @@ namespace dtmi_rido_pnp
             }
         }
 
-        private static async Task SubscribeToSysTopicsAsync(IHubMqttConnection connection)
+        private static async Task SubscribeToSysTopicsAsync(IMqttConnection connection)
         {
             var subres = await connection.SubscribeAsync(new string[]
                                                             {
