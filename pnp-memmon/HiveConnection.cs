@@ -20,6 +20,13 @@ namespace pnp_memmon
         IMqttClient mqttClient;
         private bool disposedValue;
 
+        public static async Task<IMqttConnection> CreateAsync(ConnectionSettings connectionSettings, CancellationToken cancellationToken)
+        {
+            var conn = new HiveConnection(connectionSettings);
+            await conn.ConnectAsync(cancellationToken);
+            return conn;
+        }
+
         private HiveConnection(ConnectionSettings connectionSettings)
         {
             ConnectionSettings = connectionSettings;
@@ -35,29 +42,20 @@ namespace pnp_memmon
             });
         }
 
-        public async Task ConnectAsync()
+        private async Task ConnectAsync(CancellationToken cancellationToken)
         {
             var connAck = await mqttClient.ConnectAsync(new MqttClientOptionsBuilder()
                                  .WithTcpServer(ConnectionSettings.HostName, 8883).WithTls()
                                  .WithClientId(ConnectionSettings.DeviceId)
                                  .WithCredentials(ConnectionSettings.DeviceId, ConnectionSettings?.SharedAccessKey)
                                  .Build(),
-                                 CancellationToken.None);
+                                 cancellationToken);
 
             if (connAck?.ResultCode != MqttClientConnectResultCode.Success)
             {
                 throw new ApplicationException($"Error connecting: {connAck?.ResultCode} {connAck?.ReasonString}");
             }
         }
-
-        
-        public static async Task<IMqttConnection> CreateAsync(ConnectionSettings connectionSettings)
-        {
-            var conn = new HiveConnection(connectionSettings);
-            await conn.ConnectAsync();
-            return conn;
-        }
-
 
         public bool IsConnected => mqttClient.IsConnected;
 

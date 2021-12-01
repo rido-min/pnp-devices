@@ -20,7 +20,7 @@ namespace dtmi_rido_pnp
         const string modelId = "dtmi:rido:pnp:memmon;1";
         internal IMqttConnection _connection;
 
-        int lastRid;
+        internal int lastRid;
 
         public Func<WritableProperty<bool>, Task<WritableProperty<bool>>>? OnProperty_enabled_Updated = null;
         public Func<WritableProperty<int>, Task<WritableProperty<int>>>? OnProperty_interval_Updated = null;
@@ -38,11 +38,11 @@ namespace dtmi_rido_pnp
             ConfigureSysTopicsCallbacks(_connection);
         }
 
-        public static async Task<memmon_mqtt> CreateDeviceClientAsync(string cs)
+        public static async Task<memmon_mqtt> CreateDeviceClientAsync(string cs, CancellationToken cancellation)
         {
             ArgumentNullException.ThrowIfNull(cs);
             var connectionSettings = new ConnectionSettings(cs);
-            IMqttConnection conn = await HiveConnection.CreateAsync(connectionSettings);
+            IMqttConnection conn = await HiveConnection.CreateAsync(connectionSettings, cancellation);
             await SubscribeToSysTopicsAsync(conn);
             return new memmon_mqtt(conn);
         }
@@ -160,8 +160,11 @@ namespace dtmi_rido_pnp
         public async Task<MqttClientPublishResult> UpdateTwin(object payload) =>
             await _connection.PublishAsync($"pnp/{ConnectionSettings?.DeviceId}/props/reported/?$rid={lastRid++}", payload);
 
-        public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet) =>
-            await _connection.PublishAsync($"pnp/{ConnectionSettings?.DeviceId}/telemetry", new { workingSet });
+        public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet) => 
+            await Send_workingSet_Async(workingSet, CancellationToken.None);
+
+        public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet, CancellationToken cancellationToken) =>
+            await _connection.PublishAsync($"pnp/{ConnectionSettings?.DeviceId}/telemetry", new { workingSet }, cancellationToken);
 
 
     }

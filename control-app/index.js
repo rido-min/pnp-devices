@@ -70,7 +70,7 @@ const cmd_getRuntimeStats = diagMode => {
         })
         client.on('message', (t, m) => {
             const msg = m ? JSON.parse(m.toString()) : {};
-            console.log(t, msg)
+            //console.log(t, msg)
             did = t.split('/')[1]
             if (t.startsWith(`pnp/client1/telemetry`)) {
                 data.addRow([new Date(),msg.workingSet])
@@ -84,6 +84,7 @@ const cmd_getRuntimeStats = diagMode => {
 
             if (t.startsWith('pnp/client1/props/reported'))
             {
+                console.log(msg)
                 if (msg.interval) gbid('input_interval').value = msg.interval.value
                 if (msg.enabled) gbid('input_enabled').value = msg.enabled.value
             }
