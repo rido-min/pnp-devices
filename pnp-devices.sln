@@ -16,6 +16,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Rido.IoTHubServiceClient", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "pnp-memmon", "pnp-memmon\pnp-memmon.csproj", "{49492B12-EAA4-4402-B1B1-22523AC9971F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pnp-memmon-component", "pnp-memmon-component\pnp-memmon-component.csproj", "{77B91BB2-75CD-4964-8B0C-DE681D265968}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,6 +40,10 @@ Global
 		{49492B12-EAA4-4402-B1B1-22523AC9971F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{49492B12-EAA4-4402-B1B1-22523AC9971F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{49492B12-EAA4-4402-B1B1-22523AC9971F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77B91BB2-75CD-4964-8B0C-DE681D265968}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77B91BB2-75CD-4964-8B0C-DE681D265968}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77B91BB2-75CD-4964-8B0C-DE681D265968}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77B91BB2-75CD-4964-8B0C-DE681D265968}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
