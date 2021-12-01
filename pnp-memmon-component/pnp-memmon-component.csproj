@@ -4,12 +4,15 @@
     <TargetFramework>net6.0</TargetFramework>
     <UserSecretsId>dotnet-pnp_memmon_component-5D006139-36AD-475B-900E-49795F5D6909</UserSecretsId>
     <RootNamespace>pnp_memmon_component</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 
   
   <ItemGroup>
+    <PackageReference Include="Humanizer" Version="2.13.14" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.0" />
-    <PackageReference Include="Rido.IoTHubClient" Version="0.0.11" />
+    <PackageReference Include="Rido.IoTHubClient" Version="0.0.12" />
   </ItemGroup>
 
   <ItemGroup>
