@@ -12,9 +12,6 @@ using System.Web;
 
 namespace dtmi_rido_pnp
 {
-
-
-
     public class memmon_mqtt
     {
         const string modelId = "dtmi:rido:pnp:memmon;1";

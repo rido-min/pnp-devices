@@ -46,7 +46,27 @@ const cmd_getRuntimeStats = diagMode => {
     })
 }
 
-
+const updateReported = twin => {
+    const tileInterval = gbid('reported-interval').children.item(1)
+    
+    if (twin.started) {
+        const tileStarted = gbid('reported-started').children.item(1)
+        const startedValue = new Date(twin.started).toLocaleString()
+        tileStarted.innerText = startedValue
+    }
+    if (twin.enabled) {
+        const tileEnabled = gbid('reported-enabled')
+        tileEnabled.children.item(1).innerText = twin.enabled.value
+        tileEnabled.children.item(2).innerText = 'ac: ' + twin.enabled.ac
+        tileEnabled.children.item(3).innerText = new Date().toLocaleString()
+    }
+    if (twin.interval) {
+        const tileInterval = gbid('reported-interval')
+        tileInterval.children.item(1).innerText = twin.interval.value
+        tileInterval.children.item(2).innerText = 'ac: ' + twin.interval.ac
+        tileInterval.children.item(3).innerText = new Date().toLocaleString()
+    }
+}
 
 ;(async () => {
     const options = {clientId, username, password}
@@ -85,6 +105,7 @@ const cmd_getRuntimeStats = diagMode => {
             if (t.startsWith('pnp/client1/props/reported'))
             {
                 console.log(msg)
+                updateReported(msg)
                 if (msg.interval) gbid('input_interval').value = msg.interval.value
                 if (msg.enabled) gbid('input_enabled').value = msg.enabled.value
             }

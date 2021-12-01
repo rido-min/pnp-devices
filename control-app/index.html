@@ -1,13 +1,37 @@
 <html>
+
 <head>
-  <title>Hello IoT World Tutorial</title>
+  <title>PnP with MQTT</title>
+  <link rel="stylesheet" href="s.css">
   <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
   <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-  <script src="./index.js" type="module"></script> 
+  <script src="./index.js" type="module"></script>
 </head>
+
 <body>
   <div>
-    <h3>Properties</h3>
+    <h3>ReadOnly Properties</h3>
+    <div class="tile" id="reported-started">
+      <div class="tile-name">started</div>
+      <div class="tile-num-big"></div>
+      <div class="tile-caption"></div>
+    </div>
+    <div class="tile" id="reported-enabled">
+      <div class="tile-name">enabled</div>
+      <div class="tile-num-big"></div>
+      <div class="tile-caption"></div>
+      <div class="tile-caption"></div>
+    </div>
+    <div class="tile" id="reported-interval">
+      <div class="tile-name">interval</div>
+      <div class="tile-num-big"></div>
+      <div class="tile-caption"></div>
+      <div class="tile-caption"></div>
+    </div>
+  </div>
+
+  <div>
+    <h3>Writable Properties</h3>
     <div>
       interval
       <input type="text" placeholder="5" id="input_interval" />
@@ -22,9 +46,9 @@
   </div>
 
   <div>
-  <h3>Commands</h3>
+    <h3>Commands</h3>
     <div>
-      DianosticsMode
+      DiagnosticsMode
       <select id="cmd_getRuntimeStats_diagnosticsMode">
         <option value="0">Minimal</option>
         <option value="1">Complete</option>
@@ -36,6 +60,9 @@
       </pre>
     </div>
   </div>
-  <div id="chart_div"></div>
+  <div >
+    <div class="chart" id="chart_div"></div>
+  </div>
 </body>
+
 </html>
