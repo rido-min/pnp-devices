@@ -15,12 +15,12 @@ namespace pnp_memmon
 
         public event EventHandler<DisconnectEventArgs>? OnMqttClientDisconnected; // { get; set; }
 
-        public ConnectionSettings? ConnectionSettings { get; private set; }
+        public ConnectionSettings ConnectionSettings { get; private set; }
 
         IMqttClient mqttClient;
         private bool disposedValue;
 
-        public HiveConnection(ConnectionSettings connectionSettings)
+        private HiveConnection(ConnectionSettings connectionSettings)
         {
             ConnectionSettings = connectionSettings;
             mqttClient = new MqttFactory().CreateMqttClient();
@@ -38,11 +38,12 @@ namespace pnp_memmon
         public async Task ConnectAsync()
         {
             var connAck = await mqttClient.ConnectAsync(new MqttClientOptionsBuilder()
-                                 .WithTcpServer(ConnectionSettings?.HostName, 8883).WithTls()
-                                 .WithClientId(ConnectionSettings?.DeviceId)
-                                 .WithCredentials(ConnectionSettings?.DeviceId, ConnectionSettings?.SharedAccessKey)
+                                 .WithTcpServer(ConnectionSettings.HostName, 8883).WithTls()
+                                 .WithClientId(ConnectionSettings.DeviceId)
+                                 .WithCredentials(ConnectionSettings.DeviceId, ConnectionSettings?.SharedAccessKey)
                                  .Build(),
                                  CancellationToken.None);
+
             if (connAck?.ResultCode != MqttClientConnectResultCode.Success)
             {
                 throw new ApplicationException($"Error connecting: {connAck?.ResultCode} {connAck?.ReasonString}");
@@ -63,9 +64,9 @@ namespace pnp_memmon
         public async Task CloseAsync() => await mqttClient.DisconnectAsync();
 
 
-        public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload)
+        public Task<MqttClientPublishResult> PublishAsync(string topic, object payload) => PublishAsync(topic, payload, CancellationToken.None);
+        public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload, CancellationToken cancellationToken)
         {
-
             string? jsonPayload;
             if (payload is string)
             {
@@ -82,7 +83,7 @@ namespace pnp_memmon
 
             if (mqttClient != null)
             {
-                var pubRes = await mqttClient.PublishAsync(message, CancellationToken.None);
+                var pubRes = await mqttClient.PublishAsync(message, cancellationToken);
                 if (pubRes.ReasonCode != MqttClientPublishReasonCode.Success)
                 {
                     Trace.TraceError(pubRes.ReasonCode + pubRes.ReasonString);
@@ -100,32 +101,17 @@ namespace pnp_memmon
             return await mqttClient.SubscribeAsync(subBuilder.Build());
         }
 
-        public Task<MqttClientPublishResult> PublishAsync(string topic, object payload, CancellationToken cancellationToken)
-        {
-            throw new NotImplementedException();
-        }
-
         protected virtual void Dispose(bool disposing)
         {
             if (!disposedValue)
             {
                 if (disposing)
                 {
-                    // TODO: dispose managed state (managed objects)
+                    mqttClient.Dispose();
                 }
-
-                // TODO: free unmanaged resources (unmanaged objects) and override finalizer
-                // TODO: set large fields to null
                 disposedValue = true;
             }
         }
-
-        // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
-        // ~HiveConnection()
-        // {
-        //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        //     Dispose(disposing: false);
-        // }
 
         public void Dispose()
         {
