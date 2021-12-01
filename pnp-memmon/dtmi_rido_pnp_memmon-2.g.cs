@@ -49,13 +49,13 @@ namespace dtmi_rido_pnp
             //var twin = await GetTwinAsync();
             Property_enabled = new WritableProperty<bool>("enabled") { Value = defaultEnabled };
             //OnProperty_enabled_Updated?.Invoke(Property_enabled);
-            await UpdateTwin(Property_enabled.ToAck());
+            await UpdateTwinAsync(Property_enabled.ToAck());
         }
 
         public async Task InitProperty_interval_Async(int defaultInterval)
         {
             Property_interval = new WritableProperty<int>("interval") { Value = defaultInterval };
-            await UpdateTwin(Property_interval.ToAck());
+            await UpdateTwinAsync(Property_interval.ToAck());
         }
 
         void ConfigureSysTopicsCallbacks(IMqttConnection connection)
@@ -154,7 +154,7 @@ namespace dtmi_rido_pnp
         public async Task<MqttClientPublishResult> Report_started_Async(DateTime started) =>
             await _connection.PublishAsync($"pnp/{ConnectionSettings?.DeviceId}/props/reported/?$rid={lastRid++}", new { started });
 
-        public async Task<MqttClientPublishResult> UpdateTwin(object payload) =>
+        public async Task<MqttClientPublishResult> UpdateTwinAsync(object payload) =>
             await _connection.PublishAsync($"pnp/{ConnectionSettings?.DeviceId}/props/reported/?$rid={lastRid++}", payload);
 
         public async Task<MqttClientPublishResult> Send_workingSet_Async(double workingSet) => 
