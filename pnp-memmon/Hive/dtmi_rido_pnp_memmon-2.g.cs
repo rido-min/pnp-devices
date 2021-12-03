@@ -2,7 +2,6 @@
 #nullable enable
 
 using pnp_memmon;
-using pnp_memmon.HiveBindings;
 using Rido.IoTHubClient;
 using Rido.IoTHubClient.HiveTopicBinders;
 
