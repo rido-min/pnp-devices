@@ -11,9 +11,9 @@ namespace pnp_memmon
 {
     public class HiveConnection : IMqttConnection
     {
-        public Func<MqttApplicationMessageReceivedEventArgs, Task>? OnMessage { get; set; }
+        public Func<MqttApplicationMessageReceivedEventArgs, Task> OnMessage { get; set; }
 
-        public event EventHandler<DisconnectEventArgs>? OnMqttClientDisconnected; // { get; set; }
+        public event EventHandler<DisconnectEventArgs> OnMqttClientDisconnected; // { get; set; }
 
         public ConnectionSettings ConnectionSettings { get; private set; }
 
@@ -65,7 +65,7 @@ namespace pnp_memmon
         public Task<MqttClientPublishResult> PublishAsync(string topic, object payload) => PublishAsync(topic, payload, CancellationToken.None);
         public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload, CancellationToken cancellationToken)
         {
-            string? jsonPayload;
+            string jsonPayload;
             if (payload is string)
             {
                 jsonPayload = payload as string;
@@ -116,6 +116,17 @@ namespace pnp_memmon
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
+        }
+
+        public Task<MqttClientSubscribeResult> SubscribeAsync(string topic, CancellationToken cancellationToken = default) => SubscribeAsync(new string[] { topic });
+        
+
+        public async Task<MqttClientSubscribeResult> SubscribeAsync(string[] topics, CancellationToken cancellationToken = default)
+        {
+            //subscribedTopics = topics;
+            var subBuilder = new MqttClientSubscribeOptionsBuilder();
+            topics.ToList().ForEach(t => subBuilder.WithTopicFilter(t, MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce));
+            return await mqttClient.SubscribeAsync(subBuilder.Build());
         }
     }
 }
