@@ -12,6 +12,7 @@ namespace Rido.IoTHubClient.HiveTopicBinders
         {
             _ = connection.SubscribeAsync("pnp/+/props/set/#");
             //UpdateTwinBinder updateTwin = new UpdateTwinBinder(connection);
+            UpdatePropertyBinder propertyBinder = new UpdatePropertyBinder(connection);
             connection.OnMessage += async m =>
             {
                 var topic = m.ApplicationMessage.Topic;
@@ -33,6 +34,7 @@ namespace Rido.IoTHubClient.HiveTopicBinders
                             if (ack != null)
                             {
                                 //_ = updateTwin.SendRequestWaitForResponse(ack);
+                                _ = propertyBinder.SendRequestWaitForResponse(ack.ToAck());
                             }
                         }
                     }

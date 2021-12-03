@@ -61,7 +61,6 @@ namespace pnp_memmon
 
         public async Task CloseAsync() => await mqttClient.DisconnectAsync();
 
-
         public Task<MqttClientPublishResult> PublishAsync(string topic, object payload) => PublishAsync(topic, payload, CancellationToken.None);
         public async Task<MqttClientPublishResult> PublishAsync(string topic, object payload, CancellationToken cancellationToken)
         {
@@ -91,7 +90,8 @@ namespace pnp_memmon
             return new MqttClientPublishResult() { ReasonCode = MqttClientPublishReasonCode.UnspecifiedError };
         }
 
-        public async Task<MqttClientSubscribeResult> SubscribeAsync(string[] topics)
+        public Task<MqttClientSubscribeResult> SubscribeAsync(string topic, CancellationToken cancellationToken = default) => SubscribeAsync(new string[] { topic });
+        public async Task<MqttClientSubscribeResult> SubscribeAsync(string[] topics, CancellationToken cancellationToken = default)
         {
             //subscribedTopics = topics;
             var subBuilder = new MqttClientSubscribeOptionsBuilder();
@@ -110,23 +110,11 @@ namespace pnp_memmon
                 disposedValue = true;
             }
         }
-
         public void Dispose()
         {
             // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
-        }
-
-        public Task<MqttClientSubscribeResult> SubscribeAsync(string topic, CancellationToken cancellationToken = default) => SubscribeAsync(new string[] { topic });
-        
-
-        public async Task<MqttClientSubscribeResult> SubscribeAsync(string[] topics, CancellationToken cancellationToken = default)
-        {
-            //subscribedTopics = topics;
-            var subBuilder = new MqttClientSubscribeOptionsBuilder();
-            topics.ToList().ForEach(t => subBuilder.WithTopicFilter(t, MQTTnet.Protocol.MqttQualityOfServiceLevel.AtLeastOnce));
-            return await mqttClient.SubscribeAsync(subBuilder.Build());
         }
     }
 }

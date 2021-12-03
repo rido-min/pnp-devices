@@ -23,7 +23,7 @@ public class DeviceRunner : BackgroundService
     const bool default_enabled = true;
     const int default_interval = 8;
 
-    dtmi_rido_pnp.memmon client;
+    dtmi_rido_pnp.memmon_hive client;
 
     public DeviceRunner(ILogger<DeviceRunner> logger, IConfiguration configuration)
     {
@@ -34,7 +34,7 @@ public class DeviceRunner : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogWarning("Connecting..");
-        client = await dtmi_rido_pnp.memmon.CreateDeviceClientAsync(_configuration.GetConnectionString("hub"), stoppingToken) ??
+        client = await dtmi_rido_pnp.memmon_hive.CreateDeviceClientAsync(_configuration.GetConnectionString("hive"), stoppingToken) ??
             throw new ApplicationException("Error creating MQTT Client");
 
         client.Connection.OnMqttClientDisconnected += (o, e) => reconnectCounter++;
@@ -129,8 +129,8 @@ public class DeviceRunner : BackgroundService
             string interval_value = client?.Property_interval.PropertyValue?.Value.ToString();
             StringBuilder sb = new();
             AppendLineWithPadRight(sb, " ");
-            AppendLineWithPadRight(sb, client?.ConnectionSettings?.HostName);
-            AppendLineWithPadRight(sb, $"{client?.ConnectionSettings?.DeviceId} ({client?.ConnectionSettings?.Auth})");
+            AppendLineWithPadRight(sb, client.Connection.ConnectionSettings?.HostName);
+            AppendLineWithPadRight(sb, $"{client.Connection.ConnectionSettings?.DeviceId} ({client.Connection.ConnectionSettings?.Auth})");
             AppendLineWithPadRight(sb, " ");
             AppendLineWithPadRight(sb, String.Format("{0:8} | {1:5} | {2}", "Property", "Value", "Version"));
             AppendLineWithPadRight(sb, String.Format("{0:8} | {1:5} | {2}", "--------", "-----", "------"));
