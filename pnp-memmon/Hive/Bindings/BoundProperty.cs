@@ -7,7 +7,6 @@ namespace Rido.IoTHubClient.HiveTopicBinders
     {
         public WritableProperty<T> PropertyValue;
         readonly string propertyName;
-        //readonly UpdateTwinBinder updateTwin;
         readonly DesiredUpdatePropertyBinder<T> desiredBinder;
         UpdatePropertyBinder updatePropertyBinder;
 
